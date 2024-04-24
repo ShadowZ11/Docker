@@ -2,6 +2,7 @@
 
 ## Description
 This is a simple repo that contains all of my docker images that I have created for pipelines that need specific runtimes.
+Read the README.md file in each folder to know more about the docker image.
 
 ## Docker Images
 - ### [Docker Image 1](docker-java) (Java) (Deprecated, prefer using docker-maven instead)

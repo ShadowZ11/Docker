@@ -19,10 +19,10 @@ RUN apk add --update --no-cache python3 py3-pip py3-virtualenv && ln -sf python3
 
 RUN python3 -m venv /opt/venv
 
-# Activer l'environnement virtuel et installer EB CLI
+# Activer l'environnement virtuel et installer AWS CLI v2
 RUN . /opt/venv/bin/activate && \
     pip install --upgrade pip && \
-    pip install awsebcli
+    pip install awsebcli && pip install awscli
 
 # Assurez-vous que les commandes utilisent l'environnement virtuel
 ENV PATH="/opt/venv/bin:$PATH"
@@ -33,11 +33,6 @@ RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/s
 
 # Installer Helm
 RUN curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
-
-# Installer AWS CLI v2
-RUN . /opt/venv/bin/activate && \
-    pip install --upgrade pip && \
-    pip install awscli
 
 # Installer Terraform
 RUN release=`curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest |  grep tag_name | cut -d: -f2 | tr -d \"\,\v | awk '{$1=$1};1'` && \

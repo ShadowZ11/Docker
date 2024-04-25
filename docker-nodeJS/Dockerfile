@@ -13,7 +13,19 @@ RUN apk update && \
     openssh-client \
     bash
 
-RUN apk add --update --no-cache python3 && ln -sf python3 /usr/bin/python
+RUN apk add --no-cache zip
+
+RUN apk add --update --no-cache python3 py3-pip py3-virtualenv && ln -sf python3 /usr/bin/python
+
+RUN python3 -m venv /opt/venv
+
+# Activer l'environnement virtuel et installer EB CLI
+RUN . /opt/venv/bin/activate && \
+    pip install --upgrade pip && \
+    pip install awsebcli
+
+# Assurez-vous que les commandes utilisent l'environnement virtuel
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Installer kubectl
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
@@ -35,3 +47,5 @@ RUN release=`curl -s https://api.github.com/repos/hashicorp/terraform/releases/l
     rm terraform_${release}_linux_amd64.zip
 
 WORKDIR /app
+
+CMD ["node", "--version"]

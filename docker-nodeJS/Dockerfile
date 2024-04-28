@@ -11,6 +11,12 @@ RUN apk update && \
     unzip \
     git \
     openssh-client \
+    musl-dev \
+    libffi-dev \
+    gcc \
+    python3-dev \
+    linux-headers \
+    cargo \
     bash
 
 RUN apk add --no-cache zip
@@ -19,10 +25,10 @@ RUN apk add --update --no-cache python3 py3-pip py3-virtualenv && ln -sf python3
 
 RUN python3 -m venv /opt/venv
 
-# Activer l'environnement virtuel et installer AWS CLI v2
+# Activer l'environnement virtuel et installer AWS CLI v2 et la cli azure
 RUN . /opt/venv/bin/activate && \
     pip install --upgrade pip && \
-    pip install awsebcli && pip install awscli
+    pip install awsebcli && pip install awscli && pip install azure-cli
 
 # Assurez-vous que les commandes utilisent l'environnement virtuel
 ENV PATH="/opt/venv/bin:$PATH"
@@ -40,9 +46,6 @@ RUN release=`curl -s https://api.github.com/repos/hashicorp/terraform/releases/l
     unzip terraform_${release}_linux_amd64.zip && \
     mv terraform /usr/bin/terraform && \
     rm terraform_${release}_linux_amd64.zip
-
-# Installer la CLI Azure
-RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
 WORKDIR /app
 

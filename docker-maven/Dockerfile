@@ -1,4 +1,4 @@
-FROM maven:3.9.6-eclipse-temurin-8
+FROM maven:3.9.6-eclipse-temurin-21
 LABEL authors="Manub"
 
 # Installer les dépendances nécessaires
@@ -19,10 +19,8 @@ RUN apt-get update && \
     python3-pip \
     && ln -sf python3 /usr/bin/python
 
-RUN     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
-        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
-        apt-get update && \
-        apt-get install -y docker-ce docker-ce-cli containerd.io
+# Installer Docker
+RUN curl -fsSL https://get.docker.com/ | bash
 
 # Installer kubectl
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \

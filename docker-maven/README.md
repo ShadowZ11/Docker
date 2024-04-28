@@ -9,8 +9,11 @@ The Docker image comes with three separate tags corresponding to the version of 
 - **Maven (3.9.6-eclipse-temurin-8):** Maven is a build automation tool used primarily for Java projects.
 - **Various dependencies:** Including CA certificates, curl for making HTTP requests, apt-transport-https and software-properties-common for package management, gnupg and gnupg-agent for cryptography, openssl for handling SSL/TLS certificates, unzip for decompressing files, git for version control, openssh-client for connecting to SSH servers, and bash for command interpretation. Additionally, Python3 and its package installer pip are included in this Docker image.
 - **Docker CLI:** Command line interface for managing Docker containers.
+- **kubectl:** A command line tool for controlling Kubernetes clusters.
+- **Helm:** A package manager for Kubernetes.
 - **AWS CLI v2:** Amazon Web Services' Command Line Interface, version 2.
 - **Terraform:** An Open Source Infrastructure as Code (IaC) tool. Terraform lets you define and provide datacenter infrastructure using a declarative configuration language.
+- **Azure CLI:** A command-line tool for managing Azure resources.
 
 ## Usage
 

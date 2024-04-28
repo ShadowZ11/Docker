@@ -41,6 +41,9 @@ RUN release=`curl -s https://api.github.com/repos/hashicorp/terraform/releases/l
     mv terraform /usr/bin/terraform && \
     rm terraform_${release}_linux_amd64.zip
 
+# Installer la CLI Azure
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
 WORKDIR /app
 
 CMD ["node", "--version"]

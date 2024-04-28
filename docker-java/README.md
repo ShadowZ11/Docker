@@ -16,6 +16,7 @@ The Docker image used to be tagged with three separate tags corresponding to the
 - **Helm:** A package manager for Kubernetes.
 - **AWS CLI v2:** Amazon Web Services' Command Line Interface, version 2.
 - **Terraform:** An Open Source Infrastructure as Code (IaC) tool that allows defining and providing datacenter infrastructure.
+- **Azure CLI:** A command-line tool for managing Azure resources.
 
 ## Usage
 

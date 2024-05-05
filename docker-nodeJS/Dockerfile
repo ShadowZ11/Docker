@@ -1,4 +1,4 @@
-FROM node:20.10.0-alpine
+FROM node:20-alpine3.19
 
 # Installer les dépendances nécessaires
 RUN apk update && \

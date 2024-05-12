@@ -2,12 +2,15 @@
 
 This Docker image is built to be used as an environment for running deployment scripts and commands across multiple
 platforms.
-It is based on `node:20.10.0-alpine` and includes several useful tools for interacting with various services
+It is based on `node:20-alpine` and includes several useful tools for interacting with various services
 and clusters.
+
+_**An experimental tag which name is `node-multiarch-20` is also available,
+and provides multi architecture such as `amd64` and `arm64`.**_
 
 ## Image Contents
 
-- **Node.js (20.10.0-alpine):** JavaScript runtime built on Chrome's V8 JavaScript engine.
+- **Node.js (20-alpine):** JavaScript runtime built on Chrome's V8 JavaScript engine.
 - **Various dependencies:** Includes CA certificates, curl for making HTTP requests, gnupg for cryptography, docker-cli
   for managing Docker containers, openssl for handling SSL/TLS certificates, unzip for decompressing files, git for
   version control, openssh-client for connecting to SSH servers, and bash for command interpretation.

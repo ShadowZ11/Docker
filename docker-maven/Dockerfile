@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     openssl \
     unzip \
     git \
+    jq \
     openssh-client \
     bash \
     python3 \

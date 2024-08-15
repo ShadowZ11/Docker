@@ -5,8 +5,8 @@ platforms.
 It is based on `node:20-alpine` and includes several useful tools for interacting with various services
 and clusters.
 
-_**An experimental tag which name is `node-multiarch-20` is also available,
-and provides multi architecture such as `amd64` and `arm64`.**_
+Another tag which name is `node-multiarch-20` is also available for multi-architecture support, which includes `amd64` and `arm64` architectures.
+It is recommended to use this tag if you are running on an ARM-based architecture and for newer projects.
 
 ## Image Contents
 

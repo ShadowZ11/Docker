@@ -1,4 +1,4 @@
-FROM maven:3.9.6-eclipse-temurin-21
+FROM maven:3.9.8-eclipse-temurin-21
 LABEL authors="Manub"
 
 # Installer les dépendances nécessaires
@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y \
     bash \
     python3 \
     python3-pip \
+    python3-venv \
     && ln -sf python3 /usr/bin/python \
     && apt remove -y software-properties-common \
     && apt-get autoremove -y \
@@ -25,6 +26,10 @@ RUN apt-get update && apt-get install -y \
 
 # Docker Installation
 RUN curl -fsSL https://get.docker.com/ | bash
+
+RUN python3 -m venv /opt/venv
+
+ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /tmp
 

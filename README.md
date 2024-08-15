@@ -5,10 +5,10 @@ This is a simple repo that contains all of my docker images that I have created 
 Read the README.md file in each folder to know more about the docker image.
 
 ## Docker Images
-- ### [Docker Image 1](docker-java) (Java) (Deprecated, prefer using docker-maven instead)
+- ### [Docker Image 1](docker-java) (Java) (Deprecated, prefer using the second one instead)
   - _**Description**_: This is a docker image that contains the java runtime environment installed with terraform, helm and the aws cli.
-- ### [Docker Image 2](docker-maven) (Java)
-  - **_Description_**: This is a docker image superior to the first one, it contains the java runtime environment installed with terraform, helm, the aws cli and is pulled from maven images.
+- ### [Docker Image 2](docker-maven) (Java with maven)
+  - **_Description_**: This is a docker image superior to the first one, it contains the java maven runtime environment installed with terraform, helm, the aws cli and is pulled from maven images.
 - ### [Docker Image 3](docker-nodeJS) (NodeJS)
   - **_Description_**: This is a docker image that contains the node runtime environment installed with terraform, helm, kubectl and the aws cli.
 
@@ -20,7 +20,7 @@ Read the README.md file in each folder to know more about the docker image.
   - **_Pull the image_**: `docker pull shad0wz7/maven-terraform:tagname`
   - **_Run the image_**: `Use it in your gitlab-ci.yml file or any other pipeline file`
 - ### Docker Image 3
-  - **_Pull the image_**: `docker pull shad0wz7/node-aws-terraform:node-20.10`
+  - **_Pull the image_**: `docker pull shad0wz7/node-aws-terraform:node-multiarch-20`
   - **_Run the image_**: `Use it in your gitlab-ci.yml file or any other pipeline file`
 
 ### Note

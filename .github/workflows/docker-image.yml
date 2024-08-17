@@ -1,0 +1,30 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-maven-image:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: move to good folder
+      run: cd docker-maven
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag maven:$(date +%s)
+
+  build-node-image:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: move to good folder
+      run: cd docker-nodeJS
+    
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag nodejs:$(date +%s)

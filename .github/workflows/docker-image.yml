@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: move to good folder
-      run: cd docker-maven
+      run: cd docker-maven && ls -la
     - name: Build the Docker image
       run: docker build . --tag maven:$(date +%s)
 
@@ -24,7 +24,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: move to good folder
-      run: cd docker-nodeJS
+      run: cd docker-nodeJS && ls -la
     
     - name: Build the Docker image
       run: docker build . --tag nodejs:$(date +%s)

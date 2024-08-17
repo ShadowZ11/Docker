@@ -1,10 +1,14 @@
-# [DEPRECATED] Java Amazon Corretto with Deployment Tools Docker Image
+# ⚠️ [DEPRECATED] ⚠️ Java Amazon Corretto with Deployment Tools Docker Image
 
 > **IMPORTANT:** This Docker image is deprecated. It's recommended to use the Maven image instead.  
 > https://hub.docker.com/repository/docker/shad0wz7/maven-terraform/general  
 > [Maven Image](../docker-maven)
 
-This Docker image was previously built for a use case of providing an environment for deploying applications with various tools. The image was based on `amazoncorretto:11.0.21-alpine3.18`. However, this image is no longer maintained and updated, therefore it has been deprecated. Please switch to use the Maven Docker image which has similar functionalities and is actively maintained.
+This Docker image was previously built for a use case
+of providing an environment for deploying applications with various tools.
+The image was based on `amazoncorretto:11.0.21-alpine3.18`.
+However, this image is no longer maintained and updated, therefore it has been deprecated.
+Please switch to use the Maven terraform image of shad0wz7 which has similar functionalities and is actively maintained.
 
 The Docker image used to be tagged with three separate tags corresponding to the version of Java it included: one for Java 8, one for Java 11, and one for Java 21. Please note that these tags would no longer receive updates since the image has been deprecated.
 

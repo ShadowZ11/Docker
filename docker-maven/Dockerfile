@@ -42,11 +42,19 @@ RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/s
 RUN curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 
 # Terraform Installation
-RUN release=`curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest |  grep tag_name | cut -d: -f2 | tr -d \"\,\v | awk '{$1=$1};1'` && \
-    curl "https://releases.hashicorp.com/terraform/${release}/terraform_${release}_linux_amd64.zip" -o "terraform_${release}_linux_amd64.zip" && \
-    unzip terraform_${release}_linux_amd64.zip && \
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then \
+      TERRAFORM_ARCH="amd64"; \
+    elif [ "$ARCH" = "aarch64" ]; then \
+      TERRAFORM_ARCH="arm64"; \
+    else \
+      echo "Architecture non supportée: $ARCH"; exit 1; \
+    fi && \
+    release=$(curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest | grep tag_name | cut -d: -f2 | tr -d \"\,\v | awk '{$1=$1};1') && \
+    curl "https://releases.hashicorp.com/terraform/${release}/terraform_${release}_linux_${TERRAFORM_ARCH}.zip" -o "terraform_${release}_linux_${TERRAFORM_ARCH}.zip" && \
+    unzip terraform_${release}_linux_${TERRAFORM_ARCH}.zip && \
     mv terraform /usr/bin/terraform && \
-    rm terraform_${release}_linux_amd64.zip
+    rm terraform_${release}_linux_${TERRAFORM_ARCH}.zip
 
 # Installation de AWS CLI v2
 RUN pip install --no-cache-dir --upgrade pip && \

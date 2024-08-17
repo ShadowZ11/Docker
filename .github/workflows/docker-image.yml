@@ -27,4 +27,4 @@ jobs:
       run: cd docker-nodeJS && ls -la
     
     - name: Build the Docker image
-      run: docker build . --tag nodejs:$(date +%s)
+      run: ls && docker build . --tag nodejs:$(date +%s)

@@ -15,7 +15,7 @@ jobs:
     - name: move to good folder
       run: cd docker-maven
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag maven:$(date +%s)
+      run: docker build . --tag maven:$(date +%s)
 
   build-node-image:
     runs-on: ubuntu-latest
@@ -27,4 +27,4 @@ jobs:
       run: cd docker-nodeJS
     
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag nodejs:$(date +%s)
+      run: docker build . --tag nodejs:$(date +%s)

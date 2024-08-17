@@ -6,19 +6,40 @@ on:
   pull_request:
     branches: [ "main" ]
 
+env:
+  DATE: $(date +%s)
+
 jobs:
   build-maven-image:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: cd docker-maven && docker build . --tag maven:$(date +%s)
+      - uses: actions/checkout@v4
+      - name: Build the Docker image
+        run: cd docker-maven && docker build . --tag maven:${{ env.DATE }}
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: 'maven:${{ env.DATE }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
 
   build-node-image:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: cd docker-nodeJS && docker build . --tag nodejs:$(date +%s)
+      - uses: actions/checkout@v4
+      - name: Build the Docker image
+        run: cd docker-nodeJS && docker build . --tag nodejs:${{ env.DATE }}
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: 'nodejs:${{ env.DATE }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'

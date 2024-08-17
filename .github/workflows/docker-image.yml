@@ -16,11 +16,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build the Docker image
-        run: cd docker-maven && docker build . --tag maven:${{ env.DATE }}
+        run: cd docker-maven && docker build . --tag maven:pipeline
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: 'maven:${{ env.DATE }}'
+          image-ref: 'maven:pipeline'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
@@ -33,11 +33,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build the Docker image
-        run: cd docker-nodeJS && docker build . --tag nodejs:${{ env.DATE }}
+        run: cd docker-nodeJS && docker build . --tag nodejs:pipeline
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: 'nodejs:${{ env.DATE }}'
+          image-ref: 'nodejs:pipeline'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true

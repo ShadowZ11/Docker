@@ -57,8 +57,9 @@ RUN ARCH=$(uname -m) && \
     rm terraform_${release}_linux_${TERRAFORM_ARCH}.zip
 
 # Installation de AWS CLI v2
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir awsebcli awscli
+RUN . /opt/venv/bin/activate && \
+    pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir awsebcli "awscli==1.29.*"
 
 # Installation de CLI Azure
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash

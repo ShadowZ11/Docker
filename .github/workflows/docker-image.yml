@@ -12,19 +12,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: move to good folder
-      run: cd docker-maven && ls -la
     - name: Build the Docker image
-      run: docker build . --tag maven:$(date +%s)
+      run: cd docker-maven && docker build . --tag maven:$(date +%s)
 
   build-node-image:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-
-    - name: move to good folder
-      run: cd docker-nodeJS && ls -la
-    
     - name: Build the Docker image
-      run: ls && docker build . --tag nodejs:$(date +%s)
+      run: cd docker-nodeJS && docker build . --tag nodejs:$(date +%s)

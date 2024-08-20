@@ -44,18 +44,19 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Installer la cli google cloud
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then \
-    GOOGLE_ARCH="amd64"; \
+      GOOGLE_ARCH="x86_64"; \
     elif [ "$ARCH" = "aarch64" ]; then \
-    GOOGLE_ARCH="arm64"; \
+      GOOGLE_ARCH="arm"; \
     else \
-    echo "Architecture non supportée: $ARCH"; exit 1; \
+      echo "Architecture non supportée: $ARCH"; exit 1; \
     fi && \
-    curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz && \
-    tar -xf google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz && \
-    ./google-cloud-sdk/install.sh -q && \
-    ./google-cloud-sdk/bin/gcloud init --skip-diagnostics --quiet && \
+    curl -OL https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz && \
+    tar -xvzf google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz && \
+    ./google-cloud-sdk/install.sh -q --command-completion true --path-update true && \
     rm google-cloud-cli-linux-x86_64.tar.gz
 
+# Ajouter manuellement Google Cloud SDK au PATH
+ENV PATH=$PATH:/google-cloud-sdk/bin
 
 # Installer kubectl
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \

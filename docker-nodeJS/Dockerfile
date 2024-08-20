@@ -26,12 +26,7 @@ RUN apk add --update --no-cache python3 py3-pip py3-virtualenv && ln -sf python3
 RUN python3 -m venv /opt/venv
 
 RUN npm install -g npm@latest && \
-    npm install -g pnpm && \
-    npm install -g vercel && \
-    npm install -g netlify-cli && \
-    npm install -g pm2 && \
-    npm install -g firebase-tools && \
-    npm install -g gatsby-cli
+    npm install -g pnpm vercel netlify-cli pm2 firebase-tools gatsby-cli
 
 # Activer l'environnement virtuel et installer AWS CLI v2 et la cli azure
 RUN . /opt/venv/bin/activate && \

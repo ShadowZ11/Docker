@@ -48,7 +48,7 @@ RUN ARCH=$(uname -m) && \
     curl -OL https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz && \
     tar -xvzf google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz && \
     ./google-cloud-sdk/install.sh -q --command-completion true --path-update true && \
-    rm google-cloud-cli-linux-x86_64.tar.gz
+    rm google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz
 
 # Ajouter manuellement Google Cloud SDK au PATH
 ENV PATH=$PATH:/google-cloud-sdk/bin

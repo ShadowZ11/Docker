@@ -21,6 +21,7 @@ It is recommended to use this tag if you are running on an ARM-based architectur
 - **Terraform:** An Open Source Infrastructure as Code (IaC) tool that allows defining and providing datacenter
   infrastructure.
 - **Azure CLI:** A command-line tool for managing Azure resources.
+- \*_**New**_\* **Google Cloud CLI SDK:** A set of tools for managing Google Cloud resources.
 
 ## Usage
 

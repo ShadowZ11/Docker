@@ -25,6 +25,14 @@ RUN apk add --update --no-cache python3 py3-pip py3-virtualenv && ln -sf python3
 
 RUN python3 -m venv /opt/venv
 
+RUN npm install -g npm@latest && \
+    npm install -g pnpm && \
+    npm install -g vercel && \
+    npm install -g netlify-cli && \
+    npm install -g pm2 && \
+    npm install -g firebase-tools && \
+    npm install -g gatsby-cli
+
 # Activer l'environnement virtuel et installer AWS CLI v2 et la cli azure
 RUN . /opt/venv/bin/activate && \
     pip install --upgrade pip && \
@@ -32,6 +40,22 @@ RUN . /opt/venv/bin/activate && \
 
 # Assurez-vous que les commandes utilisent l'environnement virtuel
 ENV PATH="/opt/venv/bin:$PATH"
+
+# Installer la cli google cloud
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then \
+    GOOGLE_ARCH="amd64"; \
+    elif [ "$ARCH" = "aarch64" ]; then \
+    GOOGLE_ARCH="arm64"; \
+    else \
+    echo "Architecture non supportée: $ARCH"; exit 1; \
+    fi && \
+    curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz && \
+    tar -xf google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz && \
+    ./google-cloud-sdk/install.sh -q && \
+    ./google-cloud-sdk/bin/gcloud init --skip-diagnostics --quiet && \
+    rm google-cloud-cli-linux-x86_64.tar.gz
+
 
 # Installer kubectl
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \

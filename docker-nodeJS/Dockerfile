@@ -26,7 +26,7 @@ RUN apk add --update --no-cache python3 py3-pip py3-virtualenv && ln -sf python3
 RUN python3 -m venv /opt/venv
 
 RUN npm install -g npm@latest && \
-    npm install -g pnpm vercel netlify-cli pm2 firebase-tools gatsby-cli
+    npm install -g pnpm vercel firebase-tools
 
 # Activer l'environnement virtuel et installer AWS CLI v2 et la cli azure
 RUN . /opt/venv/bin/activate && \
@@ -76,5 +76,3 @@ RUN ARCH=$(uname -m) && \
     rm terraform_${release}_linux_${TERRAFORM_ARCH}.zip
 
 WORKDIR /app
-
-CMD ["node", "--version"]

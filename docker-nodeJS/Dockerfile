@@ -17,9 +17,8 @@ RUN apk update && \
     python3-dev \
     linux-headers \
     cargo \
+    zip \
     bash
-
-RUN apk add --no-cache zip
 
 RUN apk add --update --no-cache python3 py3-pip py3-virtualenv && ln -sf python3 /usr/bin/python
 
@@ -74,5 +73,7 @@ RUN ARCH=$(uname -m) && \
     unzip terraform_${release}_linux_${TERRAFORM_ARCH}.zip && \
     mv terraform /usr/bin/terraform && \
     rm terraform_${release}_linux_${TERRAFORM_ARCH}.zip
+
+RUN rm -rf /tmp/*
 
 WORKDIR /app

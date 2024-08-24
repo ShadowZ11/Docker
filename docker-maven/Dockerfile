@@ -1,4 +1,4 @@
-FROM maven:3.9.8-eclipse-temurin-21
+FROM maven:3.9.9-eclipse-temurin-21
 LABEL authors="Manub"
 
 # Installer les dépendances nécessaires
@@ -19,10 +19,10 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-venv \
     && ln -sf python3 /usr/bin/python \
-    && apt remove -y software-properties-common \
-    && apt-get autoremove -y \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && apt remove -y software-properties-common
+
+# Installation google cloud cli
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg && apt-get update -y && apt-get install google-cloud-cli -y
 
 # Docker Installation
 RUN curl -fsSL https://get.docker.com/ | bash
@@ -64,4 +64,7 @@ RUN . /opt/venv/bin/activate && \
 # Installation de CLI Azure
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
-CMD ["mvn", "--version"]
+# clean des dépendances
+RUN apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*

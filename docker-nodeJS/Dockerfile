@@ -19,10 +19,12 @@ RUN apk update && \
     cargo \
     zip \
     bash \
+    python3 \
+    py3-pip \
+    py3-virtualenv \
+    && ln -sf python3 /usr/bin/python \
     && npm install -g npm@latest && \
     npm install -g pnpm vercel firebase-tools
-
-RUN apk add --update --no-cache python3 py3-pip py3-virtualenv && ln -sf python3 /usr/bin/python
 
 RUN python3 -m venv /opt/venv
 

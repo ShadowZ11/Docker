@@ -74,6 +74,7 @@ RUN ARCH=$(uname -m) && \
     mv terraform /usr/bin/terraform && \
     rm terraform_${release}_linux_${TERRAFORM_ARCH}.zip
 
-RUN rm -rf /tmp/*
+RUN apk del .build-deps && \
+    rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 
 WORKDIR /app

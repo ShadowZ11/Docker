@@ -2,7 +2,7 @@
 
 This Docker image is built with the intention of providing a usable environment for building applications with Maven while also providing several tools for deployment. The image is based on `maven:3.9.9-eclipse-temurin-x`.
 
-The Docker image comes with three separate tags corresponding to the version of Java it includes:
+The Docker image comes with four separate tags corresponding to the version of Java it includes:
 Java 8, Java 11, Java 17 and Java 21.
 
 ## Image Contents

@@ -2,7 +2,7 @@ FROM node:20-alpine3.20
 
 # Installer les dépendances nécessaires
 RUN apk update && \
-    apk add --no-cache \
+    apk add --no-cache --virtual .build-deps \
     ca-certificates \
     curl \
     gnupg \
@@ -18,14 +18,13 @@ RUN apk update && \
     linux-headers \
     cargo \
     zip \
-    bash
+    bash \
+    && npm install -g npm@latest && \
+    npm install -g pnpm vercel firebase-tools
 
 RUN apk add --update --no-cache python3 py3-pip py3-virtualenv && ln -sf python3 /usr/bin/python
 
 RUN python3 -m venv /opt/venv
-
-RUN npm install -g npm@latest && \
-    npm install -g pnpm vercel firebase-tools
 
 # Activer l'environnement virtuel et installer AWS CLI v2 et la cli azure
 RUN . /opt/venv/bin/activate && \

@@ -3,65 +3,75 @@ FROM node:20-alpine3.20
 # Installer les dépendances nécessaires
 RUN apk update && \
     apk add --no-cache --virtual .build-deps \
-    ca-certificates \
-    curl \
-    gnupg \
-    docker-cli \
-    openssl \
-    unzip \
-    git \
-    openssh-client \
-    musl-dev \
-    libffi-dev \
-    gcc \
-    python3-dev \
-    linux-headers \
-    cargo \
-    zip \
     bash \
-    python3 \
+    ca-certificates \
+    cargo \
+    curl \
+    docker-cli \
+    gcc \
+    git \
+    gnupg \
+    libffi-dev \
+    linux-headers \
+    musl-dev \
+    openssh-client \
+    openssl \
     py3-pip \
     py3-virtualenv \
+    python3 \
+    python3-dev \
+    unzip \
+    zip \
     && ln -sf python3 /usr/bin/python \
     && npm install -g npm@latest && \
-    npm install -g pnpm vercel firebase-tools
-
-RUN python3 -m venv /opt/venv
-
-# Activer l'environnement virtuel et installer AWS CLI v2 et la cli azure
-RUN . /opt/venv/bin/activate && \
+    npm install -g pnpm vercel firebase-tools && \
+    # Activer l'environnement virtuel et installer AWS CLI v2 et la cli azure
+    python3 -m venv /opt/venv && \
+    . /opt/venv/bin/activate && \
     pip install --upgrade pip && \
     pip install awsebcli && pip install awscli && pip install azure-cli
 
 # Assurez-vous que les commandes utilisent l'environnement virtuel
 ENV PATH="/opt/venv/bin:$PATH"
 
+WORKDIR /installer
+
 # Installer la cli google cloud
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then \
       GOOGLE_ARCH="x86_64"; \
+      ADD https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz /installer/google-cloud-cli.tar.gz; \
     elif [ "$ARCH" = "aarch64" ]; then \
       GOOGLE_ARCH="arm"; \
+      ADD https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-arm.tar.gz /installer/google-cloud-cli.tar.gz; \
     else \
       echo "Architecture non supportée: $ARCH"; exit 1; \
     fi && \
-    curl -OL https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz && \
-    tar -xvzf google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz && \
+    tar -xvzf google-cloud-cli.tar.gz && \
     ./google-cloud-sdk/install.sh -q --command-completion true --path-update true && \
-    rm google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz
+    rm google-cloud-cli.tar.gz
+
+# Nettoyer l'environnement de travail temporaire
+WORKDIR /
 
 # Ajouter manuellement Google Cloud SDK au PATH
 ENV PATH=$PATH:/google-cloud-sdk/bin
 
 # Installer kubectl
-RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
-    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-
-# Installer Helm
-RUN curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
-
-# Installer Terraform
 RUN ARCH=$(uname -m) && \
+        if [ "$ARCH" = "x86_64" ]; then \
+          KUBECTL_ARCH="amd64"; \
+        elif [ "$ARCH" = "aarch64" ]; then \
+          KUBECTL_ARCH="arm64"; \
+        else \
+          KUBECTL_ARCH="amd64"; \
+        fi && \
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${KUBECTL_ARCH}/kubectl" && \
+    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl && \
+    # Installer Helm \
+    curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash \
+    # Installer Terraform
+&& ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then \
       TERRAFORM_ARCH="amd64"; \
     elif [ "$ARCH" = "aarch64" ]; then \
@@ -73,9 +83,8 @@ RUN ARCH=$(uname -m) && \
     curl "https://releases.hashicorp.com/terraform/${release}/terraform_${release}_linux_${TERRAFORM_ARCH}.zip" -o "terraform_${release}_linux_${TERRAFORM_ARCH}.zip" && \
     unzip terraform_${release}_linux_${TERRAFORM_ARCH}.zip && \
     mv terraform /usr/bin/terraform && \
-    rm terraform_${release}_linux_${TERRAFORM_ARCH}.zip
-
-RUN apk del .build-deps && \
+    rm terraform_${release}_linux_${TERRAFORM_ARCH}.zip \
+&& apk del .build-deps && \
     rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 
 WORKDIR /app

@@ -56,8 +56,6 @@ ENV PATH=$PATH:installer/google-cloud-sdk/bin
 # Nettoyer l'environnement de travail temporaire
 WORKDIR /
 
-RUN gcloud --version
-
 # Installer kubectl
 RUN ARCH=$(uname -m) && \
         if [ "$ARCH" = "x86_64" ]; then \
@@ -85,6 +83,7 @@ RUN ARCH=$(uname -m) && \
     unzip terraform_${release}_linux_${TERRAFORM_ARCH}.zip && \
     mv terraform /usr/bin/terraform && \
     rm terraform_${release}_linux_${TERRAFORM_ARCH}.zip \
+    # Nettoyer l'environnement de travail temporaire
 && apk del .build-deps && \
     rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 

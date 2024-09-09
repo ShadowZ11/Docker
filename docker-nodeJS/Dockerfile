@@ -50,11 +50,11 @@ RUN ARCH=$(uname -m) && \
     ./google-cloud-sdk/install.sh -q --command-completion true --path-update true && \
     rm google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz
 
+# Ajouter manuellement Google Cloud SDK au PATH
+ENV PATH=$PATH:installer/google-cloud-sdk/bin
+
 # Nettoyer l'environnement de travail temporaire
 WORKDIR /
-
-# Ajouter manuellement Google Cloud SDK au PATH
-ENV PATH=$PATH:/google-cloud-sdk/bin
 
 RUN gcloud --version
 

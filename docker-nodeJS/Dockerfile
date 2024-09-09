@@ -40,22 +40,23 @@ WORKDIR /installer
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then \
       GOOGLE_ARCH="x86_64"; \
-      ADD https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz /installer/google-cloud-cli.tar.gz; \
     elif [ "$ARCH" = "aarch64" ]; then \
       GOOGLE_ARCH="arm"; \
-      ADD https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-arm.tar.gz /installer/google-cloud-cli.tar.gz; \
     else \
       echo "Architecture non supportée: $ARCH"; exit 1; \
     fi && \
-    tar -xvzf google-cloud-cli.tar.gz && \
+    curl -OL https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz && \
+    tar -xvzf google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz && \
     ./google-cloud-sdk/install.sh -q --command-completion true --path-update true && \
-    rm google-cloud-cli.tar.gz
+    rm google-cloud-cli-linux-${GOOGLE_ARCH}.tar.gz
 
 # Nettoyer l'environnement de travail temporaire
 WORKDIR /
 
 # Ajouter manuellement Google Cloud SDK au PATH
 ENV PATH=$PATH:/google-cloud-sdk/bin
+
+RUN gcloud --version
 
 # Installer kubectl
 RUN ARCH=$(uname -m) && \

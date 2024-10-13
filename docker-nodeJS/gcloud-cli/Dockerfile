@@ -21,13 +21,10 @@ RUN apk update && \
     python3-dev \
     unzip \
     zip \
-    && ln -sf python3 /usr/bin/python \
-    && npm install -g npm@latest && \
-    npm install -g pnpm vercel firebase-tools && \
-    # Activer l'environnement virtuel et installer AWS CLI v2 et la cli azure
-    python3 -m venv /opt/venv && \
-    . /opt/venv/bin/activate && \
-    pip install --upgrade pip
+    && ln -sf python3 /usr/bin/python
+
+RUN npm install -g npm@latest && \
+    npm install -g pnpm vercel
 
 # Assurez-vous que les commandes utilisent l'environnement virtuel
 ENV PATH="/opt/venv/bin:$PATH"
@@ -64,9 +61,10 @@ RUN ARCH=$(uname -m) && \
           KUBECTL_ARCH="amd64"; \
         fi && \
     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${KUBECTL_ARCH}/kubectl" && \
-    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl \
-    # Installer Terraform
-&& ARCH=$(uname -m) && \
+    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Installer Terraform
+RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then \
       TERRAFORM_ARCH="amd64"; \
     elif [ "$ARCH" = "aarch64" ]; then \

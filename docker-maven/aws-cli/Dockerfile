@@ -62,7 +62,7 @@ RUN ARCH=$(uname -m) && \
 # Activer l'environnement virtuel Python et installer AWS CLI et EB CLI
 RUN . /opt/venv/bin/activate && \
     pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir awsebcli "awscli==1.29.*" && \
+    pip install --no-cache-dir awsebcli "awscli==1.29.*"
 
 # Nettoyage des paquets inutiles et des fichiers temporaires
 RUN apt-get autoremove -y && \

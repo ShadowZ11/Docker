@@ -59,7 +59,6 @@ RUN ARCH=$(uname -m) && \
     mv terraform /usr/bin/terraform && \
     rm terraform_${release}_linux_${TERRAFORM_ARCH}.zip \
     # Nettoyer l'environnement de travail temporaire
-&& apk del .build-deps && \
-    rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
+&& rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 
 WORKDIR /app

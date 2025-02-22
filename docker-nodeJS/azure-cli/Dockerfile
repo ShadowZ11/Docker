@@ -7,6 +7,7 @@ RUN apk update && \
     ca-certificates \
     cargo \
     curl \
+    docker-cli \
     gcc \
     git \
     gnupg \

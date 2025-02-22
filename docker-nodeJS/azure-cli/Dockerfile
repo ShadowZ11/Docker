@@ -8,6 +8,7 @@ RUN apk update && \
     cargo \
     curl \
     docker-cli \
+    docker-cli-buildx \
     gcc \
     git \
     gnupg \

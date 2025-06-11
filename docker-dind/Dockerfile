@@ -11,7 +11,8 @@ RUN apk add --no-cache \
     bash \
     gcc \
     py3-pip \
-    python3-dev
+    python3-dev \
+    git
 
 RUN python3 -m venv /opt/venv && \
         . /opt/venv/bin/activate && \

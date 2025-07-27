@@ -14,6 +14,7 @@ RUN apk add --no-cache \
     python3-dev \
     nodejs \
     npm \
+    zip \
     git
 
 RUN npm i -g yarn

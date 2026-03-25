@@ -1,5 +1,5 @@
 # Utilise l'image Docker officielle DinD comme base
-FROM docker:28-dind
+FROM docker:29-dind
 
 # Installe Azure CLI et autres outils nécessaires
 RUN apk add --no-cache \
@@ -42,7 +42,7 @@ RUN ARCH=$(uname -m) && \
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Vérifie que tout est installé
-RUN docker --version && az --version && aws --version
+RUN docker --version && az --version && aws --version && node --version
 
 # Lance le daemon Docker à l'intérieur du conteneur
 ENTRYPOINT ["dockerd-entrypoint.sh"]

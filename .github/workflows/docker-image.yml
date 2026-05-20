@@ -1,46 +1,520 @@
-name: Docker Image CI
+name: Publish Docker images to Docker Hub
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+    paths:
+      - "docker-dind/**"
+      - "docker-java/**"
+      - "docker-maven/**"
+      - "docker-nodeJS/**"
+      - ".github/workflows/docker-image.yml"
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+    paths:
+      - "docker-dind/**"
+      - "docker-java/**"
+      - "docker-maven/**"
+      - "docker-nodeJS/**"
+      - ".github/workflows/docker-image.yml"
+  workflow_dispatch:
 
 env:
-  DATE: $(date +%s)
+  DOCKERHUB_NAMESPACE: shad0wz7
+  SINGLEARCH_PLATFORM: linux/amd64
+  MULTIARCH_PLATFORMS: linux/amd64,linux/arm64
+
+concurrency:
+  group: docker-images-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
-  build-maven-image:
+  detect-changes:
     runs-on: ubuntu-latest
-
+    outputs:
+      dind: ${{ steps.filter.outputs.dind }}
+      java: ${{ steps.filter.outputs.java }}
+      maven: ${{ steps.filter.outputs.maven }}
+      maven_aws: ${{ steps.filter.outputs.maven_aws }}
+      maven_azure: ${{ steps.filter.outputs.maven_azure }}
+      maven_gcloud: ${{ steps.filter.outputs.maven_gcloud }}
+      node: ${{ steps.filter.outputs.node }}
+      node_aws: ${{ steps.filter.outputs.node_aws }}
+      node_azure: ${{ steps.filter.outputs.node_azure }}
+      node_gcloud: ${{ steps.filter.outputs.node_gcloud }}
     steps:
       - uses: actions/checkout@v4
-      - name: Build the Docker image
-        run: cd docker-maven && docker build . --tag maven:pipeline
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: 'maven:pipeline'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
+          fetch-depth: 2
 
-  build-node-image:
+      - name: Detect changed image folders
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            dind:
+              - 'docker-dind/**'
+            java:
+              - 'docker-java/**'
+            maven:
+              - 'docker-maven/**'
+            maven_aws:
+              - 'docker-maven/aws-cli/**'
+            maven_azure:
+              - 'docker-maven/azure-cli/**'
+            maven_gcloud:
+              - 'docker-maven/gcloud-cli/**'
+            node:
+              - 'docker-nodeJS/**'
+            node_aws:
+              - 'docker-nodeJS/aws-cli/**'
+            node_azure:
+              - 'docker-nodeJS/azure-cli/**'
+            node_gcloud:
+              - 'docker-nodeJS/gcloud-cli/**'
+
+  build-dind:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.dind == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-      - name: Build the Docker image
-        run: cd docker-nodeJS && docker build . --tag nodejs:pipeline
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.24.0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
         with:
-          image-ref: 'nodejs:pipeline'
-          format: 'table'
-          exit-code: '1'
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build DinD tool image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker-dind
+          file: ./docker-dind/Dockerfile
+          platforms: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && env.MULTIARCH_PLATFORMS || env.SINGLEARCH_PLATFORM }}
+          load: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.DOCKERHUB_NAMESPACE }}/docker-dind:latest
+            ${{ env.DOCKERHUB_NAMESPACE }}/docker-dind:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan DinD image with Trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.24.0
+        with:
+          image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/docker-dind:${{ github.sha }}
+          format: table
           ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
-          timeout: '30m0s'
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+  build-java:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.java == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Java tool image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker-java
+          file: ./docker-java/Dockerfile
+          platforms: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && env.MULTIARCH_PLATFORMS || env.SINGLEARCH_PLATFORM }}
+          load: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.DOCKERHUB_NAMESPACE }}/java-aws-terraform:latest
+            ${{ env.DOCKERHUB_NAMESPACE }}/java-aws-terraform:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan Java image with Trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.24.0
+        with:
+          image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/java-aws-terraform:${{ github.sha }}
+          format: table
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+  build-maven:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.maven == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Maven tool image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker-maven
+          file: ./docker-maven/Dockerfile
+          platforms: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && env.MULTIARCH_PLATFORMS || env.SINGLEARCH_PLATFORM }}
+          load: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.DOCKERHUB_NAMESPACE }}/maven-terraform:latest
+            ${{ env.DOCKERHUB_NAMESPACE }}/maven-terraform:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan Maven image with Trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.24.0
+        with:
+          image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/maven-terraform:${{ github.sha }}
+          format: table
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+  build-maven-aws:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.maven_aws == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Maven AWS image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker-maven/aws-cli
+          file: ./docker-maven/aws-cli/Dockerfile
+          platforms: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && env.MULTIARCH_PLATFORMS || env.SINGLEARCH_PLATFORM }}
+          load: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.DOCKERHUB_NAMESPACE }}/maven-aws-cli:latest
+            ${{ env.DOCKERHUB_NAMESPACE }}/maven-aws-cli:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan Maven AWS image with Trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.24.0
+        with:
+          image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/maven-aws-cli:${{ github.sha }}
+          format: table
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+  build-maven-azure:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.maven_azure == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Maven Azure image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker-maven/azure-cli
+          file: ./docker-maven/azure-cli/Dockerfile
+          platforms: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && env.MULTIARCH_PLATFORMS || env.SINGLEARCH_PLATFORM }}
+          load: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.DOCKERHUB_NAMESPACE }}/maven-azure-cli:latest
+            ${{ env.DOCKERHUB_NAMESPACE }}/maven-azure-cli:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan Maven Azure image with Trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.24.0
+        with:
+          image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/maven-azure-cli:${{ github.sha }}
+          format: table
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+  build-maven-gcloud:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.maven_gcloud == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Maven GCloud image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker-maven/gcloud-cli
+          file: ./docker-maven/gcloud-cli/Dockerfile
+          platforms: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && env.MULTIARCH_PLATFORMS || env.SINGLEARCH_PLATFORM }}
+          load: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.DOCKERHUB_NAMESPACE }}/maven-gcloud-cli:latest
+            ${{ env.DOCKERHUB_NAMESPACE }}/maven-gcloud-cli:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan Maven GCloud image with Trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.24.0
+        with:
+          image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/maven-gcloud-cli:${{ github.sha }}
+          format: table
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+  build-node:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.node == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Node.js tool image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker-nodeJS
+          file: ./docker-nodeJS/Dockerfile
+          platforms: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && env.MULTIARCH_PLATFORMS || env.SINGLEARCH_PLATFORM }}
+          load: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.DOCKERHUB_NAMESPACE }}/node-aws-terraform:latest
+            ${{ env.DOCKERHUB_NAMESPACE }}/node-aws-terraform:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan Node.js image with Trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.24.0
+        with:
+          image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/node-aws-terraform:${{ github.sha }}
+          format: table
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+  build-node-aws:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.node_aws == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Node AWS image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker-nodeJS/aws-cli
+          file: ./docker-nodeJS/aws-cli/Dockerfile
+          platforms: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && env.MULTIARCH_PLATFORMS || env.SINGLEARCH_PLATFORM }}
+          load: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.DOCKERHUB_NAMESPACE }}/node-aws-cli:latest
+            ${{ env.DOCKERHUB_NAMESPACE }}/node-aws-cli:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan Node AWS image with Trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.24.0
+        with:
+          image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/node-aws-cli:${{ github.sha }}
+          format: table
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+  build-node-azure:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.node_azure == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Node Azure image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker-nodeJS/azure-cli
+          file: ./docker-nodeJS/azure-cli/Dockerfile
+          platforms: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && env.MULTIARCH_PLATFORMS || env.SINGLEARCH_PLATFORM }}
+          load: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.DOCKERHUB_NAMESPACE }}/node-azure-cli:latest
+            ${{ env.DOCKERHUB_NAMESPACE }}/node-azure-cli:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan Node Azure image with Trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.24.0
+        with:
+          image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/node-azure-cli:${{ github.sha }}
+          format: table
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+  build-node-gcloud:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.node_gcloud == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Node GCloud image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker-nodeJS/gcloud-cli
+          file: ./docker-nodeJS/gcloud-cli/Dockerfile
+          platforms: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && env.MULTIARCH_PLATFORMS || env.SINGLEARCH_PLATFORM }}
+          load: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.DOCKERHUB_NAMESPACE }}/node-gcloud-cli:latest
+            ${{ env.DOCKERHUB_NAMESPACE }}/node-gcloud-cli:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan Node GCloud image with Trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.24.0
+        with:
+          image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/node-gcloud-cli:${{ github.sha }}
+          format: table
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH

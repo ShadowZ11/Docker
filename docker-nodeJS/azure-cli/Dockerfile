@@ -1,69 +1,64 @@
 FROM node:20-alpine
 
-# Installer les dépendances nécessaires
-RUN apk update && \
-    apk add --no-cache --virtual .build-deps \
-    bash \
-    ca-certificates \
-    cargo \
-    curl \
-    docker-cli \
-    docker-cli-buildx \
-    gcc \
-    git \
-    gnupg \
-    libffi-dev \
-    linux-headers \
-    musl-dev \
-    openssh-client \
-    openssl \
-    py3-pip \
-    py3-virtualenv \
-    python3 \
-    python3-dev \
-    unzip \
-    zip \
-    && ln -sf python3 /usr/bin/python
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=20
 
-RUN npm install -g npm@latest && \
-    npm install -g pnpm vercel
+LABEL org.opencontainers.image.title="node-azure-cli"
+LABEL org.opencontainers.image.description="Node.js image with Azure CLI, kubectl and Terraform"
+LABEL org.opencontainers.image.source="https://github.com/ShadowZ11/Docker"
+LABEL org.opencontainers.image.url="https://hub.docker.com/r/shad0wz7/node-azure-cli"
+LABEL org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.revision="${VCS_REF}"
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
 
-# Activer l'environnement virtuel et installer AWS CLI v2 et la cli azure
-RUN python3 -m venv /opt/venv && \
-    . /opt/venv/bin/activate && \
-    pip install --upgrade pip && \
-    pip install azure-cli
+RUN set -eux; \
+    apk add --no-cache \
+      bash \
+      ca-certificates \
+      cargo \
+      curl \
+      docker-cli \
+      docker-cli-buildx \
+      gcc \
+      git \
+      gnupg \
+      libffi-dev \
+      linux-headers \
+      musl-dev \
+      openssh-client \
+      openssl \
+      py3-pip \
+      py3-virtualenv \
+      python3 \
+      python3-dev \
+      unzip \
+      zip; \
+    ln -sf python3 /usr/bin/python; \
+    npm install -g npm@latest pnpm vercel; \
+    python3 -m venv /opt/venv; \
+    . /opt/venv/bin/activate; \
+    pip install --no-cache-dir --upgrade pip; \
+    pip install --no-cache-dir azure-cli
 
-# Assurez-vous que les commandes utilisent l'environnement virtuel
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Installer kubectl
-RUN ARCH=$(uname -m) && \
-        if [ "$ARCH" = "x86_64" ]; then \
-          KUBECTL_ARCH="amd64"; \
-        elif [ "$ARCH" = "aarch64" ]; then \
-          KUBECTL_ARCH="arm64"; \
-        else \
-          KUBECTL_ARCH="amd64"; \
-        fi && \
-    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${KUBECTL_ARCH}/kubectl" && \
-    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-
-# Installer Terraform
-RUN ARCH=$(uname -m) && \
-    if [ "$ARCH" = "x86_64" ]; then \
-      TERRAFORM_ARCH="amd64"; \
-    elif [ "$ARCH" = "aarch64" ]; then \
-      TERRAFORM_ARCH="arm64"; \
-    else \
-      echo "Architecture non supportée: $ARCH"; exit 1; \
-    fi && \
-    release=$(curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest | grep tag_name | cut -d: -f2 | tr -d \"\,\v | awk '{$1=$1};1') && \
-    curl "https://releases.hashicorp.com/terraform/${release}/terraform_${release}_linux_${TERRAFORM_ARCH}.zip" -o "terraform_${release}_linux_${TERRAFORM_ARCH}.zip" && \
-    unzip terraform_${release}_linux_${TERRAFORM_ARCH}.zip && \
-    mv terraform /usr/bin/terraform && \
-    rm terraform_${release}_linux_${TERRAFORM_ARCH}.zip \
-    # Nettoyer l'environnement de travail temporaire
-&& rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
+RUN set -eux; \
+    ARCH="$(uname -m)"; \
+    case "$ARCH" in \
+      x86_64) KUBECTL_ARCH=amd64; TERRAFORM_ARCH=amd64 ;; \
+      aarch64|arm64) KUBECTL_ARCH=arm64; TERRAFORM_ARCH=arm64 ;; \
+      *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;; \
+    esac; \
+    KUBECTL_VERSION="$(curl -fsSL https://dl.k8s.io/release/stable.txt)"; \
+    curl -fsSLo kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${KUBECTL_ARCH}/kubectl"; \
+    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl; \
+    rm kubectl; \
+    TERRAFORM_VERSION="$(curl -fsSL https://releases.hashicorp.com/terraform/ | grep -oE 'terraform/[0-9]+\.[0-9]+\.[0-9]+/' | cut -d/ -f2 | sort -Vr | head -n1)"; \
+    curl -fsSLo terraform.zip "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${TERRAFORM_ARCH}.zip"; \
+    unzip terraform.zip; \
+    mv terraform /usr/local/bin/terraform; \
+    rm terraform.zip; \
+    rm -rf /var/cache/apk/* /tmp/* /var/tmp/* && true
 
 WORKDIR /app

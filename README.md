@@ -1,32 +1,119 @@
-# DOCKER IMAGE
+# Docker tool images
 
-## Description
-This is a simple repo that contains all of my docker images that I have created for pipelines that need specific runtimes.
-Read the README.md file in each folder to know more about the docker image.
+This repository contains ready-to-use Docker images for CI/CD pipelines that need common build and deployment tools.
+It is now structured to be **public-ready**:
 
-## Docker Images
-- ### [Docker Image 1](docker-java) (Java) (Deprecated, prefer using the second one instead)
-  - _**Description**_: This is a docker image that contains the java runtime environment installed with terraform, helm and the aws cli.
-- ### [Docker Image 2](docker-maven) (Java with maven)
-  - **_Description_**: This is a docker image superior to the first one, it contains the java maven runtime environment installed with terraform, helm, the aws cli and is pulled from maven images.
-- ### [Docker Image 3](docker-nodeJS) (NodeJS)
-  - **_Description_**: This is a docker image that contains the node runtime environment installed with terraform, helm, kubectl and the aws cli.
+- automatic Docker Hub publishing only when a given image folder changes;
+- public-friendly image tags (`latest` + commit SHA);
+- clearer image metadata and build instructions;
+- a repository license so the project can be shared publicly with confidence.
 
-## How to use
-- ### Docker Image 1 (Deprecated, prefer using maven-terraform instead)
-  - **_Pull the image_**: `docker pull shad0wz7/java-aws-terraform:tagname`
-  - **_Run the image_**: `Use it in your gitlab-ci.yml file or any other pipeline file`
-- ### Docker Image 2
-  - **_Pull the image_**: `docker pull shad0wz7/maven-terraform:tagname`
-  - **_Run the image_**: `Use it in your gitlab-ci.yml file or any other pipeline file`
-- ### Docker Image 3
-  - **_Pull the image_**: `docker pull shad0wz7/node-aws-terraform:node-multiarch-20`
-  - **_Run the image_**: `Use it in your gitlab-ci.yml file or any other pipeline file`
+## Published images
 
-### Note
-If you like this repo, please don't forget to give it a star. Thank you!
-If you have any questions or need help, please open an issue.
-If you have any suggestions, please reach out to me on [LinkedIn](https://www.linkedin.com/in/emmanuel-boisset-b90970195/).
+| Folder | Docker Hub image | Purpose |
+| --- | --- | --- |
+| [`docker-dind`](docker-dind) | `shad0wz7/docker-dind` | Docker-in-Docker base image |
+| [`docker-java`](docker-java) | `shad0wz7/java-aws-terraform` | Java runtime + deployment tooling |
+| [`docker-maven`](docker-maven) | `shad0wz7/maven-terraform` | Maven build image + deployment tooling |
+| [`docker-maven/aws-cli`](docker-maven/aws-cli) | `shad0wz7/maven-aws-cli` | Maven + AWS deployment tooling |
+| [`docker-maven/azure-cli`](docker-maven/azure-cli) | `shad0wz7/maven-azure-cli` | Maven + Azure deployment tooling |
+| [`docker-maven/gcloud-cli`](docker-maven/gcloud-cli) | `shad0wz7/maven-gcloud-cli` | Maven + Google Cloud deployment tooling |
+| [`docker-nodeJS`](docker-nodeJS) | `shad0wz7/node-aws-terraform` | Node.js build image + deployment tooling |
+| [`docker-nodeJS/aws-cli`](docker-nodeJS/aws-cli) | `shad0wz7/node-aws-cli` | Node.js + AWS deployment tooling |
+| [`docker-nodeJS/azure-cli`](docker-nodeJS/azure-cli) | `shad0wz7/node-azure-cli` | Node.js + Azure deployment tooling |
+| [`docker-nodeJS/gcloud-cli`](docker-nodeJS/gcloud-cli) | `shad0wz7/node-gcloud-cli` | Node.js + Google Cloud deployment tooling |
 
-My gitlab: https://gitlab.com/ShadowZ11  
-My github: https://github.com/ShadowZ11
+## CI/CD behavior
+
+The GitHub Actions workflow in [`.github/workflows/docker-image.yml`](.github/workflows/docker-image.yml) does the following:
+
+1. detects which image folder changed in the commit;
+2. builds only the impacted image(s);
+3. pushes to Docker Hub on `main` only;
+4. publishes `amd64` + `arm64` images for `main` pushes, and a single-arch validation build for pull requests;
+5. publishes both `latest` and the commit SHA tag;
+6. runs a Trivy scan as a non-blocking quality signal.
+
+## Required secrets
+
+Create these repository secrets in GitHub before enabling pushes:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+
+## Usage
+
+### Maven image
+
+```bash
+docker pull shad0wz7/maven-terraform:latest
+```
+
+### Maven AWS image
+
+```bash
+docker pull shad0wz7/maven-aws-cli:latest
+```
+
+### Maven Azure image
+
+```bash
+docker pull shad0wz7/maven-azure-cli:latest
+```
+
+### Maven Google Cloud image
+
+```bash
+docker pull shad0wz7/maven-gcloud-cli:latest
+```
+
+### Java image
+
+```bash
+docker pull shad0wz7/java-aws-terraform:latest
+```
+
+### DinD image
+
+```bash
+docker pull shad0wz7/docker-dind:latest
+```
+
+### Node.js image
+
+```bash
+docker pull shad0wz7/node-aws-terraform:latest
+```
+
+### Node.js AWS image
+
+```bash
+docker pull shad0wz7/node-aws-cli:latest
+```
+
+### Node.js Azure image
+
+```bash
+docker pull shad0wz7/node-azure-cli:latest
+```
+
+### Node.js Google Cloud image
+
+```bash
+docker pull shad0wz7/node-gcloud-cli:latest
+```
+
+## Make the repository public safely
+
+If you want the repository itself to be public, this is a good baseline. Before switching visibility:
+
+- verify there are no secrets committed in the history;
+- configure the Docker Hub secrets above;
+- make sure the Docker Hub repositories exist and are public;
+- optionally add or review the `LICENSE` file.
+
+## Notes
+
+- `docker-java` is kept for compatibility but should be considered the legacy image.
+- The `README.md` inside each folder contains more details about the contents of that image.
+- If you want, I can also add GitHub release tags, semantic version tags, or a multi-arch build matrix next.

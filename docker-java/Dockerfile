@@ -1,51 +1,63 @@
 FROM amazoncorretto:21-alpine3.19
 
-# Installer les dépendances nécessaires
-RUN apk update && \
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=21
+
+LABEL org.opencontainers.image.title="java-aws-terraform"
+LABEL org.opencontainers.image.description="Java tool image with Maven, AWS CLI, Azure CLI, kubectl, Helm and Terraform"
+LABEL org.opencontainers.image.source="https://github.com/ShadowZ11/Docker"
+LABEL org.opencontainers.image.url="https://hub.docker.com/r/shad0wz7/java-aws-terraform"
+LABEL org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.revision="${VCS_REF}"
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+
+RUN set -eux; \
     apk add --no-cache \
-    ca-certificates \
-    curl \
-    gnupg \
-    docker-cli \
-    openssl \
-    maven \
-    unzip \
-    git \
-    openssh-client \
-    musl-dev \
-    libffi-dev \
-    gcc \
-    python3-dev \
-    linux-headers \
-    cargo \
-    bash
+      bash \
+      ca-certificates \
+      cargo \
+      curl \
+      docker-cli \
+      gcc \
+      git \
+      gnupg \
+      libffi-dev \
+      linux-headers \
+      maven \
+      musl-dev \
+      openssh-client \
+      openssl \
+      python3 \
+      python3-dev \
+      py3-pip \
+      py3-virtualenv \
+      unzip \
+      zip; \
+    ln -sf python3 /usr/bin/python; \
+    python3 -m venv /opt/venv; \
+    . /opt/venv/bin/activate; \
+    pip install --no-cache-dir --upgrade pip; \
+    pip install --no-cache-dir awsebcli awscli azure-cli
 
-RUN apk add --no-cache zip
-
-RUN apk add --update --no-cache python3 py3-pip py3-virtualenv && ln -sf python3 /usr/bin/python
-
-RUN python3 -m venv /opt/venv
-
-# Activer l'environnement virtuel et installer AWS CLI v2
-RUN . /opt/venv/bin/activate && \
-    pip install --upgrade pip && \
-    pip install awsebcli && pip install awscli && pip install azure-cli
-
-# Assurez-vous que les commandes utilisent l'environnement virtuel
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Installer kubectl
-RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
-    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-
-# Installer Helm
-RUN curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
-
-# Installer Terraform
-RUN release=`curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest |  grep tag_name | cut -d: -f2 | tr -d \"\,\v | awk '{$1=$1};1'` && \
-    curl "https://releases.hashicorp.com/terraform/${release}/terraform_${release}_linux_amd64.zip" -o "terraform_${release}_linux_amd64.zip" && \
-    unzip terraform_${release}_linux_amd64.zip && \
-    mv terraform /usr/bin/terraform && \
-    rm terraform_${release}_linux_amd64.zip
+RUN set -eux; \
+    ARCH="$(uname -m)"; \
+    case "$ARCH" in \
+      x86_64) KUBECTL_ARCH=amd64; TERRAFORM_ARCH=amd64 ;; \
+      aarch64|arm64) KUBECTL_ARCH=arm64; TERRAFORM_ARCH=arm64 ;; \
+      *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;; \
+    esac; \
+    KUBECTL_VERSION="$(curl -fsSL https://dl.k8s.io/release/stable.txt)"; \
+    curl -fsSLo kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${KUBECTL_ARCH}/kubectl"; \
+    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl; \
+    rm kubectl; \
+    curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash; \
+    TERRAFORM_VERSION="$(curl -fsSL https://api.github.com/repos/hashicorp/terraform/releases/latest | grep '"tag_name":' | head -n1 | cut -d '"' -f4)"; \
+    curl -fsSLo terraform.zip "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${TERRAFORM_ARCH}.zip"; \
+    unzip terraform.zip; \
+    mv terraform /usr/local/bin/terraform; \
+    rm terraform.zip
 
 WORKDIR /app

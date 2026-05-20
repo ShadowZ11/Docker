@@ -27,7 +27,10 @@ RUN set -eux; \
       openssh-client \
       openssl \
       python3 \
+      python3-dev \
       python3-pip \
+      python3-pkg-resources \
+      python3-setuptools \
       python3-venv \
       software-properties-common \
       unzip; \
@@ -35,8 +38,9 @@ RUN set -eux; \
     apt-get purge -y --auto-remove software-properties-common; \
     python3 -m venv /opt/venv; \
     . /opt/venv/bin/activate; \
-    pip install --no-cache-dir --upgrade pip; \
-    pip install --no-cache-dir awsebcli "awscli==1.29.*"; \
+    pip install --no-cache-dir --upgrade pip setuptools wheel; \
+    pip install --no-cache-dir "awscli==1.29.85"; \
+    pip install --no-cache-dir "awsebcli==3.27.2"; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 

@@ -24,10 +24,14 @@ RUN set -eux; \
       gnupg \
       gnupg-agent \
       jq \
+      lsb-release \
       openssh-client \
       openssl \
       python3 \
+      python3-dev \
       python3-pip \
+      python3-pkg-resources \
+      python3-setuptools \
       python3-venv \
       software-properties-common \
       unzip; \
@@ -39,11 +43,17 @@ RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends google-cloud-cli; \
     apt-get purge -y --auto-remove software-properties-common; \
-    curl -fsSL https://get.docker.com/ | bash; \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /tmp/docker.gpg; \
+    gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /tmp/docker.gpg; \
+    rm /tmp/docker.gpg; \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends docker-ce-cli; \
     python3 -m venv /opt/venv; \
     . /opt/venv/bin/activate; \
-    pip install --no-cache-dir --upgrade pip; \
-    pip install --no-cache-dir awsebcli "awscli==1.29.*"; \
+    pip install --no-cache-dir --upgrade pip setuptools wheel; \
+    pip install --no-cache-dir "awscli==1.29.85"; \
+    pip install --no-cache-dir "awsebcli==3.27.2"; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 

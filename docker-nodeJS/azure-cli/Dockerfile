@@ -16,16 +16,12 @@ RUN set -eux; \
     apk add --no-cache \
       bash \
       ca-certificates \
-      cargo \
       curl \
       docker-cli \
       docker-cli-buildx \
-      gcc \
       git \
       gnupg \
       libffi-dev \
-      linux-headers \
-      musl-dev \
       openssh-client \
       openssl \
       py3-pip \

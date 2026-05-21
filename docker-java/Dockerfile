@@ -16,22 +16,19 @@ RUN set -eux; \
     apk add --no-cache \
       bash \
       ca-certificates \
-      cargo \
       curl \
       docker-cli \
-      gcc \
       git \
       gnupg \
       libffi-dev \
-      linux-headers \
       maven \
-      musl-dev \
       openssh-client \
       openssl \
       python3 \
       python3-dev \
       py3-pip \
       py3-virtualenv \
+      py3-setuptools \
       unzip \
       zip; \
     ln -sf python3 /usr/bin/python; \

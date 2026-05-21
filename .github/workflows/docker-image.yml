@@ -100,7 +100,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build DinD tool image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./docker-dind
           file: ./docker-dind/Dockerfile
@@ -144,7 +144,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build Java tool image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./docker-java
           file: ./docker-java/Dockerfile
@@ -188,7 +188,7 @@ jobs:
 #        uses: docker/setup-buildx-action@v4
 #
 #      - name: Build Maven tool image
-#        uses: docker/build-push-action@v6
+#        uses: docker/build-push-action@v7
 #        with:
 #          context: ./docker-maven
 #          file: ./docker-maven/Dockerfile
@@ -232,7 +232,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build Maven AWS image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./docker-maven/aws-cli
           file: ./docker-maven/aws-cli/Dockerfile
@@ -276,7 +276,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build Maven Azure image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./docker-maven/azure-cli
           file: ./docker-maven/azure-cli/Dockerfile
@@ -320,7 +320,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build Maven GCloud image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./docker-maven/gcloud-cli
           file: ./docker-maven/gcloud-cli/Dockerfile
@@ -364,7 +364,7 @@ jobs:
 #        uses: docker/setup-buildx-action@v4
 #
 #      - name: Build Node.js tool image
-#        uses: docker/build-push-action@v6
+#        uses: docker/build-push-action@v7
 #        with:
 #          context: ./docker-nodeJS
 #          file: ./docker-nodeJS/Dockerfile
@@ -408,7 +408,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build Node AWS image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./docker-nodeJS/aws-cli
           file: ./docker-nodeJS/aws-cli/Dockerfile
@@ -452,7 +452,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build Node Azure image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./docker-nodeJS/azure-cli
           file: ./docker-nodeJS/azure-cli/Dockerfile
@@ -496,7 +496,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build Node GCloud image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./docker-nodeJS/gcloud-cli
           file: ./docker-nodeJS/gcloud-cli/Dockerfile

@@ -115,7 +115,7 @@ jobs:
 
       - name: Scan DinD image with Trivy
         continue-on-error: true
-        uses: aquasecurity/trivy-action@v0.24.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/docker-dind:${{ github.sha }}
           format: table
@@ -159,7 +159,7 @@ jobs:
 
       - name: Scan Java image with Trivy
         continue-on-error: true
-        uses: aquasecurity/trivy-action@v0.24.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/java-aws-terraform:${{ github.sha }}
           format: table
@@ -203,7 +203,7 @@ jobs:
 #
 #      - name: Scan Maven image with Trivy
 #        continue-on-error: true
-#        uses: aquasecurity/trivy-action@v0.24.0
+#        uses: aquasecurity/trivy-action@0.35.0
 #        with:
 #          image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/maven-terraform:${{ github.sha }}
 #          format: table
@@ -247,7 +247,7 @@ jobs:
 
       - name: Scan Maven AWS image with Trivy
         continue-on-error: true
-        uses: aquasecurity/trivy-action@v0.24.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/maven-aws-cli:${{ github.sha }}
           format: table
@@ -291,7 +291,7 @@ jobs:
 
       - name: Scan Maven Azure image with Trivy
         continue-on-error: true
-        uses: aquasecurity/trivy-action@v0.24.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/maven-azure-cli:${{ github.sha }}
           format: table
@@ -335,7 +335,7 @@ jobs:
 
       - name: Scan Maven GCloud image with Trivy
         continue-on-error: true
-        uses: aquasecurity/trivy-action@v0.24.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/maven-gcloud-cli:${{ github.sha }}
           format: table
@@ -379,7 +379,7 @@ jobs:
 #
 #      - name: Scan Node.js image with Trivy
 #        continue-on-error: true
-#        uses: aquasecurity/trivy-action@v0.24.0
+#        uses: aquasecurity/trivy-action@0.35.0
 #        with:
 #          image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/node-aws-terraform:${{ github.sha }}
 #          format: table
@@ -423,7 +423,7 @@ jobs:
 
       - name: Scan Node AWS image with Trivy
         continue-on-error: true
-        uses: aquasecurity/trivy-action@v0.24.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/node-aws-cli:${{ github.sha }}
           format: table
@@ -467,7 +467,7 @@ jobs:
 
       - name: Scan Node Azure image with Trivy
         continue-on-error: true
-        uses: aquasecurity/trivy-action@v0.24.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/node-azure-cli:${{ github.sha }}
           format: table
@@ -511,7 +511,7 @@ jobs:
 
       - name: Scan Node GCloud image with Trivy
         continue-on-error: true
-        uses: aquasecurity/trivy-action@v0.24.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/node-gcloud-cli:${{ github.sha }}
           format: table

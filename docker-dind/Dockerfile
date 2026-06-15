@@ -28,7 +28,8 @@ RUN set -eux; \
       npm \
       py3-pip \
       python3-dev \
-      zip; \
+      zip \
+      unzip; \
     npm i -g yarn; \
     python3 -m venv /opt/venv; \
     . /opt/venv/bin/activate; \

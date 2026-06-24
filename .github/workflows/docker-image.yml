@@ -49,7 +49,7 @@ jobs:
       node_azure: ${{ steps.filter.outputs.node_azure }}
       node_gcloud: ${{ steps.filter.outputs.node_gcloud }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
@@ -84,7 +84,7 @@ jobs:
     if: needs.detect-changes.outputs.dind == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -128,7 +128,7 @@ jobs:
     if: needs.detect-changes.outputs.java == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -172,7 +172,7 @@ jobs:
 #    if: needs.detect-changes.outputs.maven == 'true' || github.event_name == 'workflow_dispatch'
 #    runs-on: ubuntu-latest
 #    steps:
-#      - uses: actions/checkout@v6
+#      - uses: actions/checkout@v7
 #
 #      - name: Set up QEMU
 #        uses: docker/setup-qemu-action@v4
@@ -216,7 +216,7 @@ jobs:
     if: needs.detect-changes.outputs.maven_aws == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -260,7 +260,7 @@ jobs:
     if: needs.detect-changes.outputs.maven_azure == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -304,7 +304,7 @@ jobs:
     if: needs.detect-changes.outputs.maven_gcloud == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -348,7 +348,7 @@ jobs:
 #    if: needs.detect-changes.outputs.node == 'true' || github.event_name == 'workflow_dispatch'
 #    runs-on: ubuntu-latest
 #    steps:
-#      - uses: actions/checkout@v6
+#      - uses: actions/checkout@v7
 #
 #      - name: Set up QEMU
 #        uses: docker/setup-qemu-action@v4
@@ -392,7 +392,7 @@ jobs:
     if: needs.detect-changes.outputs.node_aws == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -436,7 +436,7 @@ jobs:
     if: needs.detect-changes.outputs.node_azure == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -480,7 +480,7 @@ jobs:
     if: needs.detect-changes.outputs.node_gcloud == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4

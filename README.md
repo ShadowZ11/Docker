@@ -28,11 +28,20 @@ It is now structured to be **public-ready**:
 The GitHub Actions workflow in [`.github/workflows/docker-image.yml`](.github/workflows/docker-image.yml) does the following:
 
 1. detects which image folder changed in the commit;
-2. builds only the impacted image(s);
+2. builds only the impacted image(s), as a single matrix job driven by the image
+   catalogue embedded in the workflow;
 3. pushes to Docker Hub on `main` only;
 4. publishes `amd64` + `arm64` images for `main` pushes, and a single-arch validation build for pull requests;
-5. publishes both `latest` and the commit SHA tag;
-6. runs a Trivy scan as a non-blocking quality signal.
+5. publishes `latest`, the commit SHA and a `YYYYMMDD` tag;
+6. smoke-tests every built image by running its CLIs, so a tool that installs but
+   does not actually run fails the build;
+7. runs a Trivy scan and uploads the findings to the repository Security tab.
+
+Because `kubectl`, Helm and Terraform are resolved to the latest upstream release
+at build time, the workflow also rebuilds every image cache-less once a week
+(Mondays, 04:00 UTC). Without that, the layer cache would freeze those tools at
+whatever version was current when the layer was first built. `workflow_dispatch`
+exposes a `no_cache` input to force the same behaviour on demand.
 
 ## Required secrets
 

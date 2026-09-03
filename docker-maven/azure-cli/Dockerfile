@@ -13,32 +13,61 @@ LABEL org.opencontainers.image.version="${VERSION}"
 LABEL org.opencontainers.image.revision="${VCS_REF}"
 LABEL org.opencontainers.image.created="${BUILD_DATE}"
 
+# The Azure CLI comes from Microsoft's signed apt repository, so there is no venv
+# here: adding one to PATH would only shadow the system python with an empty one.
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-      apt-transport-https \
       bash \
       ca-certificates \
       curl \
       git \
       gnupg \
-      gnupg-agent \
       jq \
       openssh-client \
       openssl \
       python3 \
-      python3-pip \
-      python3-venv \
-      software-properties-common \
       unzip; \
     ln -sf python3 /usr/bin/python; \
-    apt-get purge -y --auto-remove software-properties-common; \
-    python3 -m venv /opt/venv; \
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
+      | gpg --dearmor -o /usr/share/keyrings/microsoft.gpg; \
+    . /etc/os-release; \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ ${VERSION_CODENAME} main" \
+      > /etc/apt/sources.list.d/azure-cli.list; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends azure-cli; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 
-ENV PATH="/opt/venv/bin:$PATH"
-
-RUN set -eux; ARCH="$(uname -m)"; case "$ARCH" in x86_64) KUBECTL_ARCH=amd64; TERRAFORM_ARCH=amd64 ;; aarch64|arm64) KUBECTL_ARCH=arm64; TERRAFORM_ARCH=arm64 ;; *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;; esac; KUBECTL_VERSION="$(curl -fsSL https://dl.k8s.io/release/stable.txt)"; curl -fsSLo kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${KUBECTL_ARCH}/kubectl"; install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl; rm kubectl; curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash; TERRAFORM_VERSION="$(curl -fsSL https://releases.hashicorp.com/terraform/ | grep -oE 'terraform/[0-9]+\.[0-9]+\.[0-9]+/' | cut -d/ -f2 | sort -Vr | head -n1)"; curl -fsSLo terraform.zip "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${TERRAFORM_ARCH}.zip"; unzip terraform.zip; mv terraform /usr/local/bin/terraform; rm terraform.zip; curl -fsSL https://aka.ms/InstallAzureCLIDeb | bash
+# kubectl, Helm and Terraform track upstream latest (see CLAUDE.md) but every
+# download is checksum-verified against the publisher's own manifest.
+RUN set -eux; \
+    ARCH="$(uname -m)"; \
+    case "$ARCH" in \
+      x86_64) TOOL_ARCH=amd64 ;; \
+      aarch64|arm64) TOOL_ARCH=arm64 ;; \
+      *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;; \
+    esac; \
+    KUBECTL_VERSION="$(curl -fsSL https://dl.k8s.io/release/stable.txt)"; \
+    curl -fsSLo kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${TOOL_ARCH}/kubectl"; \
+    echo "$(curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${TOOL_ARCH}/kubectl.sha256")  kubectl" | sha256sum -c -; \
+    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl; \
+    rm kubectl; \
+    HELM_VERSION="$(curl -fsSL https://get.helm.sh/helm-latest-version)"; \
+    HELM_TGZ="helm-${HELM_VERSION}-linux-${TOOL_ARCH}.tar.gz"; \
+    curl -fsSLo "$HELM_TGZ" "https://get.helm.sh/${HELM_TGZ}"; \
+    curl -fsSL "https://get.helm.sh/${HELM_TGZ}.sha256sum" | sha256sum -c -; \
+    tar -xzf "$HELM_TGZ" --strip-components=1 -C /usr/local/bin "linux-${TOOL_ARCH}/helm"; \
+    chmod 0755 /usr/local/bin/helm; \
+    rm "$HELM_TGZ"; \
+    TERRAFORM_VERSION="$(curl -fsSL https://checkpoint-api.hashicorp.com/v1/check/terraform | sed -n 's/.*"current_version":"\([^"]*\)".*/\1/p')"; \
+    test -n "$TERRAFORM_VERSION"; \
+    TERRAFORM_ZIP="terraform_${TERRAFORM_VERSION}_linux_${TOOL_ARCH}.zip"; \
+    curl -fsSLo "$TERRAFORM_ZIP" "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_ZIP}"; \
+    curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_SHA256SUMS" \
+      | grep " ${TERRAFORM_ZIP}$" | sha256sum -c -; \
+    unzip -q "$TERRAFORM_ZIP" terraform -d /usr/local/bin; \
+    chmod 0755 /usr/local/bin/terraform; \
+    rm "$TERRAFORM_ZIP"
 
 WORKDIR /app

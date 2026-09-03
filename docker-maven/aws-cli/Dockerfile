@@ -16,36 +16,63 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}"
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-      apt-transport-https \
       bash \
       ca-certificates \
       curl \
       git \
       gnupg \
-      gnupg-agent \
       jq \
       openssh-client \
       openssl \
       python3 \
-      python3-dev \
-      python3-pip \
-      python3-pkg-resources \
-      python3-setuptools \
       python3-venv \
-      software-properties-common \
       unzip; \
     ln -sf python3 /usr/bin/python; \
-    apt-get purge -y --auto-remove software-properties-common; \
-    python3 -m venv /opt/venv; \
-    . /opt/venv/bin/activate; \
-    pip install --no-cache-dir --upgrade pip setuptools wheel; \
-    pip install --no-cache-dir "awscli==1.29.85"; \
-    pip install --no-cache-dir "awsebcli==3.27.2"; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 
-ENV PATH="/opt/venv/bin:$PATH"
+# AWS CLI v2 ships as a self-contained bundle; v1 (pip) is in maintenance mode only.
+# awsebcli has no v2 equivalent and stays in an isolated venv so its pinned
+# botocore cannot conflict with the CLI.
+RUN set -eux; \
+    curl -fsSLo awscliv2.zip "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip"; \
+    unzip -q awscliv2.zip; \
+    ./aws/install; \
+    rm -rf awscliv2.zip aws; \
+    python3 -m venv /opt/awsebcli; \
+    /opt/awsebcli/bin/pip install --no-cache-dir --upgrade pip setuptools wheel; \
+    /opt/awsebcli/bin/pip install --no-cache-dir awsebcli; \
+    ln -s /opt/awsebcli/bin/eb /usr/local/bin/eb
 
-RUN set -eux; ARCH="$(uname -m)"; case "$ARCH" in x86_64) KUBECTL_ARCH=amd64; TERRAFORM_ARCH=amd64 ;; aarch64|arm64) KUBECTL_ARCH=arm64; TERRAFORM_ARCH=arm64 ;; *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;; esac; KUBECTL_VERSION="$(curl -fsSL https://dl.k8s.io/release/stable.txt)"; curl -fsSLo kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${KUBECTL_ARCH}/kubectl"; install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl; rm kubectl; curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash; TERRAFORM_VERSION="$(curl -fsSL https://releases.hashicorp.com/terraform/ | grep -oE 'terraform/[0-9]+\.[0-9]+\.[0-9]+/' | cut -d/ -f2 | sort -Vr | head -n1)"; curl -fsSLo terraform.zip "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${TERRAFORM_ARCH}.zip"; unzip terraform.zip; mv terraform /usr/local/bin/terraform; rm terraform.zip
+# kubectl, Helm and Terraform track upstream latest (see CLAUDE.md) but every
+# download is checksum-verified against the publisher's own manifest.
+RUN set -eux; \
+    ARCH="$(uname -m)"; \
+    case "$ARCH" in \
+      x86_64) TOOL_ARCH=amd64 ;; \
+      aarch64|arm64) TOOL_ARCH=arm64 ;; \
+      *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;; \
+    esac; \
+    KUBECTL_VERSION="$(curl -fsSL https://dl.k8s.io/release/stable.txt)"; \
+    curl -fsSLo kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${TOOL_ARCH}/kubectl"; \
+    echo "$(curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${TOOL_ARCH}/kubectl.sha256")  kubectl" | sha256sum -c -; \
+    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl; \
+    rm kubectl; \
+    HELM_VERSION="$(curl -fsSL https://get.helm.sh/helm-latest-version)"; \
+    HELM_TGZ="helm-${HELM_VERSION}-linux-${TOOL_ARCH}.tar.gz"; \
+    curl -fsSLo "$HELM_TGZ" "https://get.helm.sh/${HELM_TGZ}"; \
+    curl -fsSL "https://get.helm.sh/${HELM_TGZ}.sha256sum" | sha256sum -c -; \
+    tar -xzf "$HELM_TGZ" --strip-components=1 -C /usr/local/bin "linux-${TOOL_ARCH}/helm"; \
+    chmod 0755 /usr/local/bin/helm; \
+    rm "$HELM_TGZ"; \
+    TERRAFORM_VERSION="$(curl -fsSL https://checkpoint-api.hashicorp.com/v1/check/terraform | sed -n 's/.*"current_version":"\([^"]*\)".*/\1/p')"; \
+    test -n "$TERRAFORM_VERSION"; \
+    TERRAFORM_ZIP="terraform_${TERRAFORM_VERSION}_linux_${TOOL_ARCH}.zip"; \
+    curl -fsSLo "$TERRAFORM_ZIP" "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_ZIP}"; \
+    curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_SHA256SUMS" \
+      | grep " ${TERRAFORM_ZIP}$" | sha256sum -c -; \
+    unzip -q "$TERRAFORM_ZIP" terraform -d /usr/local/bin; \
+    chmod 0755 /usr/local/bin/terraform; \
+    rm "$TERRAFORM_ZIP"
 
 WORKDIR /app

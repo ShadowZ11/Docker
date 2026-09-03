@@ -23,21 +23,23 @@ docker-nodeJS/gcloud-cli/     # Node.js + Google Cloud CLI only
 
 Each folder is self-contained: Dockerfiles are not chained with `FROM` off one another, so the tool-install `RUN` blocks are intentionally duplicated per variant rather than shared. When updating a tool version or fixing an install step in one variant, check whether the same block exists in sibling variants (e.g. `docker-maven/*-cli/Dockerfile` all install `kubectl`/`helm`/`terraform` the same way) and decide whether the fix applies there too — don't assume a shared base will pick it up.
 
-**Important nuance:** the root `docker-maven/Dockerfile` and `docker-nodeJS/Dockerfile` ("kitchen sink" images with all three cloud CLIs) exist in the repo but their CI build jobs (`build-maven`, `build-node`) are currently **commented out** in `.github/workflows/docker-image.yml`. Only the single-cloud variants (`aws-cli`, `azure-cli`, `gcloud-cli` subfolders) and `docker-dind`/`docker-java` are actively built and pushed. Don't assume the root images are being published without checking the workflow file.
+**Important nuance:** the root `docker-maven/Dockerfile` and `docker-nodeJS/Dockerfile` ("kitchen sink" images with all three cloud CLIs) exist in the repo but are marked `"disabled": true` in the image catalogue inside `.github/workflows/docker-image.yml`, so they are never built or pushed. Only the single-cloud variants (`aws-cli`, `azure-cli`, `gcloud-cli` subfolders) and `docker-dind`/`docker-java` are actively published. Don't assume the root images are being published without checking that catalogue.
 
 `docker-java` is explicitly deprecated (see `docker-java/README.md`) — the maintained replacement is `docker-maven`. Don't add new functionality there.
 
 ## Conventions used across Dockerfiles
 
 - Build args `BUILD_DATE`, `VCS_REF`, `VERSION` feed OCI image labels (`org.opencontainers.image.*`) — preserve these when editing a Dockerfile.
-- Tool versions for `kubectl` and `terraform` are resolved dynamically at build time (latest stable via `dl.k8s.io`/`releases.hashicorp.com`), not pinned — this is intentional per the project's floating-latest strategy, except where a CLI is explicitly version-pinned (e.g. `awscli==1.29.85`, `awsebcli==3.27.2` in the Maven-based images).
+- Tool versions for `kubectl`, `helm` and `terraform` are resolved dynamically at build time (`dl.k8s.io/release/stable.txt`, `get.helm.sh/helm-latest-version`, `checkpoint-api.hashicorp.com`), not pinned — intentional per the project's floating-latest strategy. Because the GHA layer cache would otherwise freeze these versions forever, the workflow rebuilds everything cache-less on a weekly schedule; keep that job when touching the workflow.
+- **Every downloaded binary must be checksum-verified** against the publisher's own manifest (`kubectl.sha256`, `<tarball>.sha256sum` for Helm, `terraform_<v>_SHA256SUMS`). Don't add a `curl | bash` installer or an unverified download — the previous `get-helm-3 | bash` was replaced for exactly this reason. Note this puts the images on **Helm 4**, not Helm 3.
+- Cloud CLIs come from a signed apt repository where the vendor publishes one (Azure CLI and Google Cloud CLI on the Debian-based Maven images) and from the official self-contained bundle for AWS CLI v2. The Alpine variants have no vendor musl build for AWS/Azure, so there they stay on pip — which is why those images need a `.build-deps` virtual package (`cargo`, `gcc`, `musl-dev`, `linux-headers`, …) that is `apk del`-ed in the same layer.
 - Architecture-aware installs use `uname -m` + a `case` statement to select `amd64`/`arm64` (or `x86_64`/`arm` for the Google Cloud SDK tarball) — multi-arch (`linux/amd64,linux/arm64`) builds only happen on `main` pushes; PR builds are single-arch (`amd64`) validation only.
-- Python-based CLIs (`awscli`, `azure-cli`, `awsebcli`) are installed into a venv at `/opt/venv` with `PATH` extended, to avoid conflicting with the system Python.
+- Python-based CLIs that remain on pip (`azure-cli` and `awscli` on Alpine, `awsebcli` everywhere) are installed into a venv with `PATH` extended, to avoid conflicting with the system Python. Only create that venv if something is actually installed into it: an empty `/opt/venv` at the head of `PATH` shadows the system python for no benefit.
 - Alpine-based images (`docker-dind`, `docker-nodeJS*`) use `apk`; Debian/Ubuntu-based images (`docker-maven*`) use `apt-get`; `docker-java` (Amazon Corretto/Alpine) uses `apk`.
 
 ## Building and testing locally
 
-There's no test suite — validation is building the image and exercising the final version-check commands each Dockerfile ends with (e.g. `docker --version && az --version && aws --version && node --version` in `docker-dind`).
+There's no test suite. Validation is building the image and running its smoke command — the list of tools each image must be able to execute lives in the `smoke` field of the image catalogue in `.github/workflows/docker-image.yml`, and CI runs it against every built image. When you add a tool to a Dockerfile, add it to that image's `smoke` string too.
 
 ```bash
 # Build a single variant locally
@@ -52,12 +54,12 @@ docker run --rm test-image bash -c "aws --version && kubectl version --client &&
 
 ## CI/CD (`.github/workflows/docker-image.yml`)
 
-- Uses `dorny/paths-filter` to detect which image folder(s) changed, then only builds the affected job(s). Add a new filter entry + job pair here when adding a new image variant.
+- Uses `dorny/paths-filter` to detect which image folder(s) changed, then generates a build matrix from a JSON image catalogue embedded in the `detect-changes` job. To add a variant: add one catalogue entry (`key`, `context`, `image`, `description`, `smoke`) plus a matching paths-filter entry. There is one `build` job for all images — don't reintroduce per-image jobs.
 - Pushes to Docker Hub only on `push` to `main` (requires `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` repo secrets); `pull_request` runs build a single-arch validation image without pushing.
-- Every push to `main` publishes both a `latest` tag and a `${{ github.sha }}` tag.
-- `workflow_dispatch` forces all jobs to run regardless of changed paths — use this to rebuild everything (e.g. after a shared base image or tool-version change upstream).
-- Each build job runs a non-blocking Trivy scan (`continue-on-error: true`) against `CRITICAL,HIGH` OS/library vulnerabilities — scan failures don't fail the build, so check the job's Trivy step output manually when reviewing a PR.
-- `concurrency` cancels in-progress runs for the same ref, so rapid pushes to the same branch/PR won't queue redundant builds.
+- Tags and OCI labels come from `docker/metadata-action`; pushes to `main` publish `latest`, `${{ github.sha }}` and a `YYYYMMDD` tag. `BUILD_DATE`/`VCS_REF` are passed as build args so the Dockerfile labels are actually populated.
+- `workflow_dispatch` and the weekly `schedule` force every image to build regardless of changed paths, as does any change to the workflow file itself. `workflow_dispatch` takes a `no_cache` input; the scheduled run always builds cache-less.
+- Trivy scans each image for `CRITICAL,HIGH` OS/library vulnerabilities and uploads SARIF to the repository Security tab (one `category` per image). The scan is still non-blocking, but findings now surface as code-scanning alerts and PR annotations rather than only in the job log.
+- `concurrency` cancels in-progress runs **for pull requests only**; runs on `main` are never cancelled so a rapid second push cannot drop a publish.
 
 ## Other notes
 

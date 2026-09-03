@@ -16,48 +16,55 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}"
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-      apt-transport-https \
       bash \
       ca-certificates \
       curl \
       git \
       gnupg \
-      gnupg-agent \
       jq \
       openssh-client \
       openssl \
       python3 \
-      python3-pip \
-      python3-venv \
-      software-properties-common \
       unzip; \
     ln -sf python3 /usr/bin/python; \
-    apt-get purge -y --auto-remove software-properties-common; \
-    echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
-      | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list; \
     curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg \
       | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg; \
+    echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
+      > /etc/apt/sources.list.d/google-cloud-sdk.list; \
     apt-get update; \
     apt-get install -y --no-install-recommends google-cloud-cli; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 
+# kubectl, Helm and Terraform track upstream latest (see CLAUDE.md) but every
+# download is checksum-verified against the publisher's own manifest.
 RUN set -eux; \
     ARCH="$(uname -m)"; \
     case "$ARCH" in \
-      x86_64) KUBECTL_ARCH=amd64; TERRAFORM_ARCH=amd64 ;; \
-      aarch64|arm64) KUBECTL_ARCH=arm64; TERRAFORM_ARCH=arm64 ;; \
+      x86_64) TOOL_ARCH=amd64 ;; \
+      aarch64|arm64) TOOL_ARCH=arm64 ;; \
       *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;; \
     esac; \
     KUBECTL_VERSION="$(curl -fsSL https://dl.k8s.io/release/stable.txt)"; \
-    curl -fsSLo kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${KUBECTL_ARCH}/kubectl"; \
+    curl -fsSLo kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${TOOL_ARCH}/kubectl"; \
+    echo "$(curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${TOOL_ARCH}/kubectl.sha256")  kubectl" | sha256sum -c -; \
     install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl; \
     rm kubectl; \
-    curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash; \
-    TERRAFORM_VERSION="$(curl -fsSL https://releases.hashicorp.com/terraform/ | grep -oE 'terraform/[0-9]+\.[0-9]+\.[0-9]+/' | cut -d/ -f2 | sort -Vr | head -n1)"; \
-    curl -fsSLo terraform.zip "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${TERRAFORM_ARCH}.zip"; \
-    unzip terraform.zip; \
-    mv terraform /usr/local/bin/terraform; \
-    rm terraform.zip && true
+    HELM_VERSION="$(curl -fsSL https://get.helm.sh/helm-latest-version)"; \
+    HELM_TGZ="helm-${HELM_VERSION}-linux-${TOOL_ARCH}.tar.gz"; \
+    curl -fsSLo "$HELM_TGZ" "https://get.helm.sh/${HELM_TGZ}"; \
+    curl -fsSL "https://get.helm.sh/${HELM_TGZ}.sha256sum" | sha256sum -c -; \
+    tar -xzf "$HELM_TGZ" --strip-components=1 -C /usr/local/bin "linux-${TOOL_ARCH}/helm"; \
+    chmod 0755 /usr/local/bin/helm; \
+    rm "$HELM_TGZ"; \
+    TERRAFORM_VERSION="$(curl -fsSL https://checkpoint-api.hashicorp.com/v1/check/terraform | sed -n 's/.*"current_version":"\([^"]*\)".*/\1/p')"; \
+    test -n "$TERRAFORM_VERSION"; \
+    TERRAFORM_ZIP="terraform_${TERRAFORM_VERSION}_linux_${TOOL_ARCH}.zip"; \
+    curl -fsSLo "$TERRAFORM_ZIP" "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_ZIP}"; \
+    curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_SHA256SUMS" \
+      | grep " ${TERRAFORM_ZIP}$" | sha256sum -c -; \
+    unzip -q "$TERRAFORM_ZIP" terraform -d /usr/local/bin; \
+    chmod 0755 /usr/local/bin/terraform; \
+    rm "$TERRAFORM_ZIP"
 
 WORKDIR /app

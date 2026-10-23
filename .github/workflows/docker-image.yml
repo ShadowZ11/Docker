@@ -94,6 +94,11 @@ jobs:
         id: matrix
         env:
           CHANGES: ${{ steps.filter.outputs.changes }}
+          PUBLISH: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+          # Pushed commits on main (the merge/squash commit carries the PR title),
+          # PR title on pull_request so the PR validates what main will publish.
+          COMMIT_MESSAGES: ${{ join(github.event.commits.*.message, '\n') }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           set -euo pipefail
           cat > /tmp/images.json <<'JSON'
@@ -173,14 +178,47 @@ jobs:
           ]
           JSON
 
-          # workflow_dispatch and schedule rebuild everything; a change to this
-          # workflow itself (the "ci" filter) revalidates every image.
+          # workflow_dispatch and schedule rebuild everything. A change to this
+          # workflow itself (the "ci" filter) revalidates every image on a PR, but
+          # on main it only republishes the images whose folder changed, unless a
+          # pushed commit carries [rebuild-all] (e.g. in the PR title).
+          markers="$COMMIT_MESSAGES"$'\n'"$PR_TITLE"
+          ci_changed=false
+          if jq -e 'index("ci")' >/dev/null <<<"$CHANGES"; then ci_changed=true; fi
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] \
              || [ "${{ github.event_name }}" = "schedule" ] \
-             || jq -e 'index("ci")' >/dev/null <<<"$CHANGES"; then
+             || grep -qF '[rebuild-all]' <<<"$markers" \
+             || { [ "$ci_changed" = true ] && [ "$PUBLISH" != true ]; }; then
             sel='["__all__"]'
           else
             sel="${CHANGES:-[]}"
+          fi
+
+          # [rebuild: dind, node_aws] adds those images on top of the selection
+          # above (never removes any). Names are a catalogue key (node_aws or
+          # node-aws), an image name (node-aws-cli) or a family (maven = every
+          # enabled maven_* variant); an unknown name fails the run rather than
+          # silently skipping a critical rebuild.
+          requested=$({ grep -oE '\[rebuild:[^]]*\]' <<<"$markers" || true; } \
+            | sed -E 's/^\[rebuild:|\]$//g' | tr -d '[:blank:]' | tr ',' '\n' \
+            | tr '[:upper:]' '[:lower:]' | sed '/^$/d' | jq -R . | jq -sc 'unique')
+          if [ "$requested" != "[]" ]; then
+            resolved=$(jq -c --argjson req "$requested" '
+              map(select(.disabled != true)) as $enabled
+              | $req | map(. as $n | {name: $n, keys: ([$enabled[]
+                  | select(.key == $n or (.key | gsub("_"; "-")) == $n or .image == $n)
+                  | .key] as $exact
+                  | if $exact != [] then $exact
+                    else [$enabled[] | select(.key | startswith($n + "_")) | .key] end)})
+            ' /tmp/images.json)
+            unknown=$(jq -r 'map(select(.keys == []) | .name) | join(", ")' <<<"$resolved")
+            if [ -n "$unknown" ]; then
+              echo "::error::Unknown image(s) in [rebuild: ...]: $unknown. Valid names: maven, node, $(jq -r 'map(select(.disabled != true) | .key) | join(", ")' /tmp/images.json)"
+              exit 1
+            fi
+            add=$(jq -c 'map(.keys[]) | unique' <<<"$resolved")
+            sel=$(jq -c --argjson add "$add" '. + $add | unique' <<<"$sel")
+            echo "Requested via [rebuild: ...]: $(jq -r 'join(", ")' <<<"$add")"
           fi
 
           matrix=$(jq -c --argjson sel "$sel" '

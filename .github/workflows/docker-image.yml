@@ -185,7 +185,7 @@ jobs:
 
           matrix=$(jq -c --argjson sel "$sel" '
             map(select(.disabled != true))
-            | map(select(($sel | index("__all__")) != null or ($sel | index(.key)) != null))
+            | map(select(.key as $k | ($sel | index("__all__")) != null or ($sel | index($k)) != null))
             | {include: .}
           ' /tmp/images.json)
 

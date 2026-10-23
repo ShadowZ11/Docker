@@ -1,3 +1,5 @@
+FROM node:24-alpine3.24 AS node
+
 # Utilise l'image Docker officielle DinD comme base
 FROM docker:29-dind
 
@@ -13,6 +15,10 @@ LABEL org.opencontainers.image.version="${VERSION}"
 LABEL org.opencontainers.image.revision="${VCS_REF}"
 LABEL org.opencontainers.image.created="${BUILD_DATE}"
 
+# Node + npm copiés depuis l'image officielle (au lieu du paquet apk nodejs, en retard)
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+
 # cargo/gcc/musl-dev/linux-headers only exist to compile the wheels the Azure CLI
 # needs on musl; keeping them in the final image would cost several hundred MB.
 RUN set -eux; \
@@ -22,13 +28,16 @@ RUN set -eux; \
       curl \
       git \
       jq \
-      nodejs \
-      npm \
+      libstdc++ \
       py3-pip \
       python3 \
       tar \
       zip \
       unzip; \
+    ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm; \
+    ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx; \
+    node --version; \
+    npm --version; \
     apk add --no-cache --virtual .build-deps \
       cargo \
       gcc \
@@ -67,3 +76,7 @@ RUN set -eux; \
 
 # Lance le daemon Docker à l'intérieur du conteneur
 ENTRYPOINT ["dockerd-entrypoint.sh"]
+
+# DEBUG UNIQUEMENT, ne pas déployer : remplace le démarrage de dockerd.
+# Chemin complet obligatoire, sinon l'entrypoint le transforme en "docker node --version".
+# CMD ["/usr/local/bin/node", "--version"]

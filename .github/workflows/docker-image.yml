@@ -67,7 +67,11 @@ jobs:
             ci:
               - '.github/workflows/docker-image.yml'
             dind:
-              - 'docker-dind/**'
+              - 'docker-dind/Dockerfile'
+            dind_aws:
+              - 'docker-dind/aws-cli/**'
+            dind_azure:
+              - 'docker-dind/azure-cli/**'
             java:
               - 'docker-java/**'
             maven:
@@ -107,8 +111,22 @@ jobs:
               "key": "dind",
               "context": "docker-dind",
               "image": "docker-dind",
-              "description": "Docker-in-Docker image with Azure CLI, AWS CLI and Terraform",
-              "smoke": "docker --version && az version && aws --version && eb --version && node --version && terraform -version"
+              "description": "Docker-in-Docker image with Node.js and Terraform",
+              "smoke": "docker --version && node --version && yarn --version && terraform -version"
+            },
+            {
+              "key": "dind_aws",
+              "context": "docker-dind/aws-cli",
+              "image": "docker-dind-aws-cli",
+              "description": "Docker-in-Docker image with Node.js, AWS CLI and Terraform",
+              "smoke": "docker --version && node --version && aws --version && eb --version && terraform -version"
+            },
+            {
+              "key": "dind_azure",
+              "context": "docker-dind/azure-cli",
+              "image": "docker-dind-azure-cli",
+              "description": "Docker-in-Docker image with Node.js, Azure CLI and Terraform",
+              "smoke": "docker --version && node --version && az version && terraform -version"
             },
             {
               "key": "java",

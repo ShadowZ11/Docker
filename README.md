@@ -12,7 +12,9 @@ It is now structured to be **public-ready**:
 
 | Folder | Docker Hub image | Purpose |
 | --- | --- | --- |
-| [`docker-dind`](docker-dind) | `shad0wz7/docker-dind` | Docker-in-Docker base image |
+| [`docker-dind`](docker-dind) | `shad0wz7/docker-dind` | Docker-in-Docker + Node.js + Terraform |
+| [`docker-dind/aws-cli`](docker-dind/aws-cli) | `shad0wz7/docker-dind-aws-cli` | Docker-in-Docker + AWS deployment tooling |
+| [`docker-dind/azure-cli`](docker-dind/azure-cli) | `shad0wz7/docker-dind-azure-cli` | Docker-in-Docker + Azure deployment tooling |
 | [`docker-java`](docker-java) | `shad0wz7/java-aws-terraform` | Java runtime + deployment tooling |
 | [`docker-maven`](docker-maven) | `shad0wz7/maven-terraform` | Maven build image + deployment tooling |
 | [`docker-maven/aws-cli`](docker-maven/aws-cli) | `shad0wz7/maven-aws-cli` | Maven + AWS deployment tooling |
@@ -86,6 +88,18 @@ docker pull shad0wz7/java-aws-terraform:latest
 
 ```bash
 docker pull shad0wz7/docker-dind:latest
+```
+
+### DinD AWS image
+
+```bash
+docker pull shad0wz7/docker-dind-aws-cli:latest
+```
+
+### DinD Azure image
+
+```bash
+docker pull shad0wz7/docker-dind-azure-cli:latest
 ```
 
 ### Node.js image

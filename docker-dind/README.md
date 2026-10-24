@@ -13,23 +13,36 @@ available in the same job. It is based on `docker:29-dind`.
   interpretation.
 - **Node.js and npm:** Included for scripts that need a JavaScript runtime, plus Yarn installed
   globally.
-- **Python3:** A Python 3 interpreter, used to install the Python-based CLIs below.
-- **AWS CLI:** Amazon Web Services' Command Line Interface, plus `awsebcli` for Elastic
-  Beanstalk. Installed via pip since Alpine/musl has no official AWS CLI v2 build.
-- **Azure CLI:** A command-line tool for managing Azure resources. Installed via pip for the
-  same musl reason as above.
 - **Terraform:** An Open Source Infrastructure as Code (IaC) tool. Terraform lets you define and
   provide datacenter infrastructure using a declarative configuration language.
 
-Unlike the [`docker-maven`](../docker-maven) and [`docker-nodeJS`](../docker-nodeJS) images, this
-image does **not** include `kubectl`, Helm or the Google Cloud CLI. It is intentionally scoped to
-DinD + AWS/Azure/Terraform; add the missing tools yourself if your pipeline needs them.
+## Variants
+
+The base image no longer ships any cloud CLI, which keeps it small and fast to build. When the
+job itself (not just the daemon) needs to talk to a cloud provider, use a variant:
+
+| Folder | Docker Hub image | Adds |
+| --- | --- | --- |
+| [`docker-dind`](.) | `shad0wz7/docker-dind` | — (DinD + Node.js + Terraform only) |
+| [`docker-dind/aws-cli`](aws-cli) | `shad0wz7/docker-dind-aws-cli` | AWS CLI + `awsebcli` (Elastic Beanstalk) |
+| [`docker-dind/azure-cli`](azure-cli) | `shad0wz7/docker-dind-azure-cli` | Azure CLI |
+
+The AWS and Azure CLIs are installed via pip into a venv, since Alpine/musl has no official
+AWS CLI v2 or Azure CLI build.
+
+> **Breaking change:** `shad0wz7/docker-dind` used to include both the AWS and Azure CLIs. If a
+> pipeline runs `aws`, `eb` or `az` inside it, switch to the matching variant above, or pin the
+> last `YYYYMMDD` tag published before the split to keep the old all-in-one image.
+
+Unlike the [`docker-maven`](../docker-maven) and [`docker-nodeJS`](../docker-nodeJS) images, none
+of these images include `kubectl`, Helm or the Google Cloud CLI. Add them yourself if your
+pipeline needs them.
 
 ## Usage
 
 This Docker image is designed to be run as a Docker-in-Docker service in a CI/CD pipeline (for
 example as a GitLab CI `services:` entry, or a sidecar container), so that a job can build and
-push images while also deploying with AWS, Azure or Terraform. The entrypoint runs
+push images while also deploying with Terraform (or AWS / Azure with the variants). The entrypoint runs
 `dockerd-entrypoint.sh`, which starts the Docker daemon.
 
 Because this image runs a Docker daemon, it generally needs to be started in privileged mode

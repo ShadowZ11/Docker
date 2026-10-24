@@ -9,7 +9,9 @@ This is **not an application** — it's a collection of standalone `Dockerfile`s
 ## Repository layout
 
 ```
-docker-dind/                  # Docker-in-Docker + Azure/AWS CLI + Terraform (all-in-one)
+docker-dind/                  # Docker-in-Docker + Node.js + Terraform (no cloud CLI)
+docker-dind/aws-cli/          # DinD + AWS CLI
+docker-dind/azure-cli/        # DinD + Azure CLI
 docker-java/                  # DEPRECATED — kept for compatibility only, do not extend
 docker-maven/                 # "Kitchen sink" Maven image: AWS + Azure + GCloud CLI + kubectl/Helm/Terraform
 docker-maven/aws-cli/         # Maven + AWS CLI only
@@ -23,7 +25,7 @@ docker-nodeJS/gcloud-cli/     # Node.js + Google Cloud CLI only
 
 Each folder is self-contained: Dockerfiles are not chained with `FROM` off one another, so the tool-install `RUN` blocks are intentionally duplicated per variant rather than shared. When updating a tool version or fixing an install step in one variant, check whether the same block exists in sibling variants (e.g. `docker-maven/*-cli/Dockerfile` all install `kubectl`/`helm`/`terraform` the same way) and decide whether the fix applies there too — don't assume a shared base will pick it up.
 
-**Important nuance:** the root `docker-maven/Dockerfile` and `docker-nodeJS/Dockerfile` ("kitchen sink" images with all three cloud CLIs) exist in the repo but are marked `"disabled": true` in the image catalogue inside `.github/workflows/docker-image.yml`, so they are never built or pushed. Only the single-cloud variants (`aws-cli`, `azure-cli`, `gcloud-cli` subfolders) and `docker-dind`/`docker-java` are actively published. Don't assume the root images are being published without checking that catalogue.
+**Important nuance:** the root `docker-maven/Dockerfile` and `docker-nodeJS/Dockerfile` ("kitchen sink" images with all three cloud CLIs) exist in the repo but are marked `"disabled": true` in the image catalogue inside `.github/workflows/docker-image.yml`, so they are never built or pushed. Only the single-cloud variants (`aws-cli`, `azure-cli`, `gcloud-cli` subfolders) and `docker-dind` (plus its `aws-cli`/`azure-cli` variants)/`docker-java` are actively published. Don't assume the root images are being published without checking that catalogue.
 
 `docker-java` is explicitly deprecated (see `docker-java/README.md`) — the maintained replacement is `docker-maven`. Don't add new functionality there.
 
@@ -35,7 +37,7 @@ Each folder is self-contained: Dockerfiles are not chained with `FROM` off one a
 - Cloud CLIs come from a signed apt repository where the vendor publishes one (Azure CLI and Google Cloud CLI on the Debian-based Maven images) and from the official self-contained bundle for AWS CLI v2. The Alpine variants have no vendor musl build for AWS/Azure, so there they stay on pip — which is why those images need a `.build-deps` virtual package (`cargo`, `gcc`, `musl-dev`, `linux-headers`, …) that is `apk del`-ed in the same layer.
 - Architecture-aware installs use `uname -m` + a `case` statement to select `amd64`/`arm64` (or `x86_64`/`arm` for the Google Cloud SDK tarball) — multi-arch (`linux/amd64,linux/arm64`) builds only happen on `main` pushes; PR builds are single-arch (`amd64`) validation only.
 - Python-based CLIs that remain on pip (`azure-cli` and `awscli` on Alpine, `awsebcli` everywhere) are installed into a venv with `PATH` extended, to avoid conflicting with the system Python. Only create that venv if something is actually installed into it: an empty `/opt/venv` at the head of `PATH` shadows the system python for no benefit.
-- Alpine-based images (`docker-dind`, `docker-nodeJS*`) use `apk`; Debian/Ubuntu-based images (`docker-maven*`) use `apt-get`; `docker-java` (Amazon Corretto/Alpine) uses `apk`.
+- Alpine-based images (`docker-dind*`, `docker-nodeJS*`) use `apk`; Debian/Ubuntu-based images (`docker-maven*`) use `apt-get`; `docker-java` (Amazon Corretto/Alpine) uses `apk`.
 
 ## Building and testing locally
 

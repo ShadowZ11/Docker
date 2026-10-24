@@ -130,6 +130,7 @@ jobs:
             },
             {
               "key": "java",
+              "disabled": true,
               "context": "docker-java",
               "image": "java-aws-terraform",
               "description": "DEPRECATED - Java tool image with Maven, AWS CLI, Azure CLI, kubectl, Helm and Terraform",

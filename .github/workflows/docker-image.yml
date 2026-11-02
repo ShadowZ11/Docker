@@ -103,7 +103,7 @@ jobs:
           PUBLISH: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
           # Pushed commits on main (the merge/squash commit carries the PR title),
           # PR title on pull_request so the PR validates what main will publish.
-          COMMIT_MESSAGES: ${{ join(github.event.commits.*.message, '\n') }}
+          COMMITS_JSON: ${{ toJSON(github.event.commits.*.message) }}
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           set -euo pipefail
@@ -203,7 +203,17 @@ jobs:
           # workflow itself (the "ci" filter) revalidates every image on a PR, but
           # on main it only republishes the images whose folder changed, unless a
           # pushed commit carries [rebuild-all] (e.g. in the PR title).
-          markers="$COMMIT_MESSAGES"$'\n'"$PR_TITLE"
+          # Markers are only read from each pushed commit's subject line, plus the
+          # PR title that GitHub puts on the first body line of a "Merge pull
+          # request" commit. Commit bodies are ignored, so a commit that merely
+          # documents the markers (e.g. "[rebuild: ...]") does not trigger them.
+          subjects=$(jq -r '
+            (. // [])[] | split("\n") | map(sub("\r$"; ""))
+            | if (.[0] | startswith("Merge pull request "))
+              then .[0], ((.[1:] | map(select(test("\\S"))))[0] // "")
+              else .[0] end
+          ' <<<"${COMMITS_JSON:-[]}")
+          markers="$subjects"$'\n'"$PR_TITLE"
           ci_changed=false
           if jq -e 'index("ci")' >/dev/null <<<"$CHANGES"; then ci_changed=true; fi
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] \

@@ -19,11 +19,13 @@ on:
       - "docker-maven/**"
       - "docker-nodeJS/**"
       - ".github/workflows/docker-image.yml"
-  # Rebuild everything cache-less every week: kubectl/Helm/Terraform versions are
-  # resolved at build time, so without this the GHA layer cache would pin them to
-  # whatever was current the day the layer was first created.
+  # Rebuild everything cache-less once a month (1st, 04:00 UTC): kubectl/Helm/
+  # Terraform versions are resolved at build time, so without this the GHA layer
+  # cache would pin them to whatever was current the day the layer was first
+  # created. For an urgent fix (e.g. critical CVE), trigger workflow_dispatch
+  # with no_cache instead of waiting for the next run.
   schedule:
-    - cron: "0 4 * * 1"
+    - cron: "0 4 1 * *"
   workflow_dispatch:
     inputs:
       no_cache:

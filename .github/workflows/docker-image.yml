@@ -19,11 +19,13 @@ on:
       - "docker-maven/**"
       - "docker-nodeJS/**"
       - ".github/workflows/docker-image.yml"
-  # Rebuild everything cache-less every week: kubectl/Helm/Terraform versions are
-  # resolved at build time, so without this the GHA layer cache would pin them to
-  # whatever was current the day the layer was first created.
+  # Rebuild everything cache-less once a month (1st, 04:00 UTC): kubectl/Helm/
+  # Terraform versions are resolved at build time, so without this the GHA layer
+  # cache would pin them to whatever was current the day the layer was first
+  # created. For an urgent fix (e.g. critical CVE), trigger workflow_dispatch
+  # with no_cache instead of waiting for the next run.
   schedule:
-    - cron: "0 4 * * 1"
+    - cron: "0 4 1 * *"
   workflow_dispatch:
     inputs:
       no_cache:
@@ -67,7 +69,11 @@ jobs:
             ci:
               - '.github/workflows/docker-image.yml'
             dind:
-              - 'docker-dind/**'
+              - 'docker-dind/Dockerfile'
+            dind_aws:
+              - 'docker-dind/aws-cli/**'
+            dind_azure:
+              - 'docker-dind/azure-cli/**'
             java:
               - 'docker-java/**'
             maven:
@@ -107,11 +113,26 @@ jobs:
               "key": "dind",
               "context": "docker-dind",
               "image": "docker-dind",
-              "description": "Docker-in-Docker image with Azure CLI, AWS CLI and Terraform",
-              "smoke": "docker --version && az version && aws --version && eb --version && node --version && terraform -version"
+              "description": "Docker-in-Docker image with Node.js and Terraform",
+              "smoke": "docker --version && node --version && yarn --version && terraform -version"
+            },
+            {
+              "key": "dind_aws",
+              "context": "docker-dind/aws-cli",
+              "image": "docker-dind-aws-cli",
+              "description": "Docker-in-Docker image with Node.js, AWS CLI and Terraform",
+              "smoke": "docker --version && node --version && aws --version && eb --version && terraform -version"
+            },
+            {
+              "key": "dind_azure",
+              "context": "docker-dind/azure-cli",
+              "image": "docker-dind-azure-cli",
+              "description": "Docker-in-Docker image with Node.js, Azure CLI and Terraform",
+              "smoke": "docker --version && node --version && az version && terraform -version"
             },
             {
               "key": "java",
+              "disabled": true,
               "context": "docker-java",
               "image": "java-aws-terraform",
               "description": "DEPRECATED - Java tool image with Maven, AWS CLI, Azure CLI, kubectl, Helm and Terraform",

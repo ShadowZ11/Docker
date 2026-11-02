@@ -12,7 +12,9 @@ It is now structured to be **public-ready**:
 
 | Folder | Docker Hub image | Purpose |
 | --- | --- | --- |
-| [`docker-dind`](docker-dind) | `shad0wz7/docker-dind` | Docker-in-Docker base image |
+| [`docker-dind`](docker-dind) | `shad0wz7/docker-dind` | Docker-in-Docker + Node.js + Terraform |
+| [`docker-dind/aws-cli`](docker-dind/aws-cli) | `shad0wz7/docker-dind-aws-cli` | Docker-in-Docker + AWS deployment tooling |
+| [`docker-dind/azure-cli`](docker-dind/azure-cli) | `shad0wz7/docker-dind-azure-cli` | Docker-in-Docker + Azure deployment tooling |
 | [`docker-java`](docker-java) | `shad0wz7/java-aws-terraform` | Java runtime + deployment tooling |
 | [`docker-maven`](docker-maven) | `shad0wz7/maven-terraform` | Maven build image + deployment tooling |
 | [`docker-maven/aws-cli`](docker-maven/aws-cli) | `shad0wz7/maven-aws-cli` | Maven + AWS deployment tooling |
@@ -38,10 +40,35 @@ The GitHub Actions workflow in [`.github/workflows/docker-image.yml`](.github/wo
 7. runs a Trivy scan and uploads the findings to the repository Security tab.
 
 Because `kubectl`, Helm and Terraform are resolved to the latest upstream release
-at build time, the workflow also rebuilds every image cache-less once a week
-(Mondays, 04:00 UTC). Without that, the layer cache would freeze those tools at
-whatever version was current when the layer was first built. `workflow_dispatch`
-exposes a `no_cache` input to force the same behaviour on demand.
+at build time, the workflow also rebuilds every image cache-less once a month
+(1st of the month, 04:00 UTC). Without that, the layer cache would freeze those
+tools at whatever version was current when the layer was first built.
+
+### Forcing a rebuild
+
+By default, a push to `main` only republishes the images whose folder changed
+(a change to the workflow file alone revalidates every image on the PR, but
+republishes nothing extra on `main`). To rebuild more than that:
+
+| Need | How |
+| --- | --- |
+| Rebuild **every** image now (e.g. critical CVE in a base image or tool) | Run the workflow manually (**Actions → Publish Docker images to Docker Hub → Run workflow**) and tick `no_cache` so `kubectl`, Helm and Terraform are re-resolved to their latest release. |
+| Rebuild **every** image as part of a change | Put `[rebuild-all]` in the commit message pushed to `main` — typically in the PR title, which ends up in the merge/squash commit. |
+| Rebuild **specific** images as part of a change | Put `[rebuild: name1, name2]` in the PR title (checked on the PR) or in a commit message pushed to `main`. |
+
+Names accepted by `[rebuild: ...]` (comma-separated, case-insensitive, `_` or `-`):
+
+- a catalogue key: `dind`, `dind_aws`, `dind_azure`, `maven_aws`, `maven_azure`,
+  `maven_gcloud`, `node_aws`, `node_azure`, `node_gcloud`;
+- a Docker Hub image name, e.g. `node-aws-cli`;
+- a family: `maven` or `node` = all their enabled variants.
+
+`[rebuild: dind]` targets only the base `docker-dind` image, since `dind` is
+itself a key; list `dind_aws` / `dind_azure` explicitly to include them. Markers
+only **add** images to the selection, never remove any. An unknown name fails the
+run (the error lists the valid names) rather than silently skipping a rebuild.
+
+Example PR title: `fix(node): bump base image [rebuild: node, dind_aws]`.
 
 ## Required secrets
 
@@ -86,6 +113,18 @@ docker pull shad0wz7/java-aws-terraform:latest
 
 ```bash
 docker pull shad0wz7/docker-dind:latest
+```
+
+### DinD AWS image
+
+```bash
+docker pull shad0wz7/docker-dind-aws-cli:latest
+```
+
+### DinD Azure image
+
+```bash
+docker pull shad0wz7/docker-dind-azure-cli:latest
 ```
 
 ### Node.js image

@@ -349,6 +349,24 @@ jobs:
           vuln-type: os,library
           severity: CRITICAL,HIGH
 
+      # Trivy reports paths *inside* the image (usr/local/bin/kubectl, "Python", ...),
+      # so in the Security tab nothing says which image an alert belongs to. Renaming
+      # the SARIF tool to "Trivy (<image>)" puts the image on every alert row and makes
+      # the "Tool" filter a per-image picker; the image is also added as a rule tag
+      # so `tag:<image>` works in the search bar.
+      - name: Label Trivy results with the image name
+        if: hashFiles(format('trivy-{0}.sarif', matrix.key)) != ''
+        continue-on-error: true
+        env:
+          SARIF: trivy-${{ matrix.key }}.sarif
+          IMAGE: ${{ matrix.image }}
+        run: |
+          jq --arg img "$IMAGE" '
+            .runs[].tool.driver.name = "Trivy (\($img))"
+            | .runs[].tool.driver.rules[]?.properties.tags += [$img]
+          ' "$SARIF" > "$SARIF.tmp"
+          mv "$SARIF.tmp" "$SARIF"
+
       # Findings land in the Security tab (and as PR annotations) instead of being
       # buried in the job log where nobody reads them.
       - name: Upload Trivy results to the Security tab

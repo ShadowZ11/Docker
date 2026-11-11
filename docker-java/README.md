@@ -1,7 +1,7 @@
 # ⚠️ [DEPRECATED] ⚠️ Java Amazon Corretto with Deployment Tools Docker Image
 
 > **IMPORTANT:** This Docker image is deprecated. It's recommended to use the Maven image instead.  
-> https://hub.docker.com/repository/docker/shad0wz7/maven-terraform/general  
+> https://hub.docker.com/r/shad0wz7/maven-terraform  
 > [Maven Image](../docker-maven)
 
 This Docker image was previously built for a use case

@@ -4,7 +4,7 @@ ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=21
 
-LABEL authors="Manub"
+LABEL org.opencontainers.image.authors="ShadowZ11"
 LABEL org.opencontainers.image.title="maven-aws-cli"
 LABEL org.opencontainers.image.description="Maven image with AWS CLI, kubectl, Helm and Terraform"
 LABEL org.opencontainers.image.source="https://github.com/ShadowZ11/Docker"

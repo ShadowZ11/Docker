@@ -1,12 +1,10 @@
 # Docker tool images
 
 This repository contains ready-to-use Docker images for CI/CD pipelines that need common build and deployment tools.
-It is now structured to be **public-ready**:
 
 - automatic Docker Hub publishing only when a given image folder changes;
-- public-friendly image tags (`latest`, commit SHA and `YYYYMMDD`);
+- predictable image tags (`latest`, commit SHA and `YYYYMMDD`);
 - clearer image metadata and build instructions;
-- a repository license so the project can be shared publicly with confidence.
 
 ## Published images
 
@@ -82,13 +80,6 @@ Markers are only read from commit **subject lines** (and the PR title line of a
 describes the syntax — like this README — does not trigger a rebuild.
 
 Example PR title: `fix(node): bump base image [rebuild: node, dind_aws]`.
-
-## Required secrets
-
-Create these repository secrets in GitHub before enabling pushes:
-
-- `DOCKERHUB_USERNAME`
-- `DOCKERHUB_TOKEN`
 
 ## Usage
 
@@ -169,15 +160,6 @@ docker pull shad0wz7/node-azure-cli:latest
 ```bash
 docker pull shad0wz7/node-gcloud-cli:latest
 ```
-
-## Make the repository public safely
-
-If you want the repository itself to be public, this is a good baseline. Before switching visibility:
-
-- verify there are no secrets committed in the history;
-- configure the Docker Hub secrets above;
-- make sure the Docker Hub repositories exist and are public;
-- optionally add or review the `LICENSE` file.
 
 ## Notes
 

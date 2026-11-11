@@ -1,9 +1,9 @@
 # CODEOWNERS
-# Documentation : https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+# Documentation: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 #
-# Les owners listés ici sont automatiquement demandés en review
-# sur toute Pull Request modifiant les fichiers correspondants.
+# Owners listed here are automatically requested for review
+# on any pull request that modifies the matching files.
 
-# ─── Règle globale ────────────────────────────────────────────────────────────
-# Tous les fichiers du repo sont sous la responsabilité des deux maintainers.
+# ─── Global rule ──────────────────────────────────────────────────────────────
+# Every file in the repository is owned by both maintainers.
 * @ShadowZ11 @Asma-B-M

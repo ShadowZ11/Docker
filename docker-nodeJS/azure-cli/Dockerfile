@@ -4,6 +4,7 @@ ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=24
 
+LABEL org.opencontainers.image.authors="ShadowZ11"
 LABEL org.opencontainers.image.title="node-azure-cli"
 LABEL org.opencontainers.image.description="Node.js image with Azure CLI, kubectl and Terraform"
 LABEL org.opencontainers.image.source="https://github.com/ShadowZ11/Docker"

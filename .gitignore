@@ -6,3 +6,5 @@
 .claude/settings.local.json
 .claude/shell-snapshots/
 .claude/plans/
+# Local MCP server config
+.mcp.json

@@ -7,6 +7,7 @@ ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=29
 
+LABEL org.opencontainers.image.authors="ShadowZ11"
 LABEL org.opencontainers.image.title="docker-dind"
 LABEL org.opencontainers.image.description="Docker-in-Docker image with Node.js and Terraform"
 LABEL org.opencontainers.image.source="https://github.com/ShadowZ11/Docker"

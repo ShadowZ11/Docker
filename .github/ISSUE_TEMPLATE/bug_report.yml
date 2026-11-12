@@ -1,0 +1,115 @@
+name: Bug report
+description: An image fails to build, a tool is missing or broken, or a known CVE is still present.
+title: "[Bug] <image>: <short description>"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem.
+
+        **Security issue that is not public yet?** Do not open an issue: use
+        [Report a vulnerability](https://github.com/ShadowZ11/Docker/security/advisories/new)
+        instead (see [SECURITY.md](https://github.com/ShadowZ11/Docker/blob/main/SECURITY.md)).
+
+  - type: dropdown
+    id: image
+    attributes:
+      label: Affected image(s)
+      description: Deprecated/disabled images no longer receive fixes; please check the newest supported image first.
+      multiple: true
+      options:
+        - shad0wz7/docker-dind
+        - shad0wz7/docker-dind-aws-cli
+        - shad0wz7/docker-dind-azure-cli
+        - shad0wz7/maven-aws-cli
+        - shad0wz7/maven-azure-cli
+        - shad0wz7/maven-gcloud-cli
+        - shad0wz7/node-aws-cli
+        - shad0wz7/node-azure-cli
+        - shad0wz7/node-gcloud-cli
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type of problem
+      options:
+        - A tool is missing or does not run
+        - Wrong tool version
+        - Image fails to build (local or CI)
+        - Known CVE still present in the image
+        - CI/CD workflow problem
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: tag
+    attributes:
+      label: Image tag or digest
+      description: "Output of `docker image inspect --format '{{index .RepoDigests 0}}' <image>`, or the tag you pulled."
+      placeholder: "shad0wz7/maven-aws-cli:20261101 or sha256:..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: arch
+    attributes:
+      label: Architecture
+      options:
+        - linux/amd64
+        - linux/arm64
+        - Not sure
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: latest
+    attributes:
+      label: Newest tag
+      options:
+        - label: I reproduced the problem with the newest tag (`docker pull <image>:latest`).
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: What you expected, and what happened instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: The commands you ran, or the CI job step using the image.
+      placeholder: |
+        docker run --rm shad0wz7/maven-aws-cli:latest bash -c "helm version"
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output / logs
+      description: Paste the error output. This will be rendered as code, no backticks needed. Remove any secret or credential first.
+      render: text
+
+  - type: input
+    id: cve
+    attributes:
+      label: CVE ID(s)
+      description: Only for a known CVE still present in the image.
+      placeholder: CVE-2026-12345
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: CI platform (GitHub Actions, GitLab CI, Jenkins…), Docker version, anything else useful.

@@ -1,0 +1,86 @@
+name: Feature request
+description: Suggest a new tool, a new image variant or an improvement to an existing image.
+title: "[Feature] <short description>"
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion! Keep in mind that each image aims to stay focused
+        (one build toolchain + one cloud CLI), so the smaller the addition, the better.
+        `docker-java` is deprecated and will not get new features.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type of request
+      options:
+        - Add a tool to an existing image
+        - New image variant (e.g. a new cloud CLI or build toolchain)
+        - Change a tool version or install method
+        - CI/CD workflow improvement
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: image
+    attributes:
+      label: Target image(s)
+      multiple: true
+      options:
+        - shad0wz7/docker-dind
+        - shad0wz7/docker-dind-aws-cli
+        - shad0wz7/docker-dind-azure-cli
+        - shad0wz7/maven-aws-cli
+        - shad0wz7/maven-azure-cli
+        - shad0wz7/maven-gcloud-cli
+        - shad0wz7/node-aws-cli
+        - shad0wz7/node-azure-cli
+        - shad0wz7/node-gcloud-cli
+        - New image
+        - Not applicable
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Use case
+      description: What are you trying to do in your pipeline, and what is missing today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: The tool (with a link to its official install docs), the image(s) it should go in, and the command that proves it works.
+      placeholder: |
+        Tool: kustomize — https://kubectl.docs.kubernetes.io/installation/kustomize/
+        Images: maven-*-cli, node-*-cli
+        Smoke check: kustomize version
+    validations:
+      required: true
+
+  - type: input
+    id: checksum
+    attributes:
+      label: Verifiable download
+      description: >
+        Every binary installed in these images must be verified against its publisher's
+        checksum manifest or come from a signed package repository. Where does the
+        publisher provide one?
+      placeholder: "https://github.com/.../releases/download/vX.Y.Z/checksums.txt"
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: e.g. installing the tool in your own job step, or using another image.
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd like to open a pull request for this.

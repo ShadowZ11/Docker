@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/ShadowZ11/Docker/security/advisories/new
+    about: Please report vulnerabilities that are not public yet privately, not as an issue. See SECURITY.md.
+  - name: Docker Hub images
+    url: https://hub.docker.com/u/shad0wz7
+    about: Browse the published images and their tags.
